@@ -13,15 +13,18 @@ router.get('/', function (req, res, next) {
             },
             "list": [{
                 "id": 1111,
-                "photo_url" : "./public/photos/user/xxxxx.jpg",
-                "interior_url" : "./public/photos/interior/xxxxx.jpg",
+                "photo_url" : "./public/photos/user/profile.jpg",
+                "interior_url" : "./public/photos/interior/europe.jpg",
                 "scrap_count": 22,
-                "hashtag": ["의자", "침대"],
-                "category": "북유럽",
                 "post_count": 50,
+                "hashtag": ["의자", "침대","북유럽"],
+                "category": "북유럽",
                 "detail": [{
-                    "furniture_url" : "./public/photos/furniture/xxxxx.jpg",
-                    "furniture": ["IKEA", 12000, "20*40", "link", "color"],
+                    "furniture_url" : "./public/photos/furniture/chair.jpg",
+                    "furniture": [{"브랜드명": "IKEA", "소품이름" : "의자", "품번" : "ABC-000",
+                        "사이즈": "20*40", "상세보기" : "link", "색상" :"white"},
+                        {"브랜드명": "한샘", "소품이름" : "침대", "품번" : "BBC-002",
+                            "사이즈": "100*200", "상세보기" : "link", "색상" :"black"}],
                     "content": "게시물 내용",
                     "reply": "게시물 댓글"
                 }]
@@ -29,7 +32,7 @@ router.get('/', function (req, res, next) {
         }
     }
     res.json(result);
-})
+});
 
 
 router.post('/', function (req, res, next) {
@@ -100,13 +103,18 @@ router.get('/', function (req, res, next) {
             },
             "list": [{
                 "id": 1111,
-                "file": "사진",
+                "photo_url" : "./public/photos/user/profile.jpg",
+                "interior_url" : "./public/photos/interior/europe.jpg",
                 "scrap_count": 22,
-                "hashtag": ["의자", "침대"],
-                "category": "북유럽",
                 "post_count": 50,
+                "hashtag": ["의자", "침대","북유럽"],
+                "category": "북유럽",
                 "detail": [{
-                    "furniture": ["IKEA", 12000, "20*40", "link", "color"],
+                    "furniture_url" : "./public/photos/furniture/chair.jpg",
+                    "furniture": [{"브랜드명": "IKEA", "소품이름" : "의자", "품번" : "ABC-000",
+                                   "사이즈": "20*40", "상세보기" : "link", "색상" :"white"},
+                                  {"브랜드명": "한샘", "소품이름" : "침대", "품번" : "BBC-002",
+                                   "사이즈": "100*200", "상세보기" : "link", "색상" :"black"}],
                     "content": "게시물 내용",
                     "reply": "게시물 댓글"
                 }]
@@ -114,7 +122,7 @@ router.get('/', function (req, res, next) {
         }
     }
     res.json(result);
-})
+});
 
 
 module.exports = router;
