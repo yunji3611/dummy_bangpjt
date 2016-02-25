@@ -1,6 +1,7 @@
 var express = require('express');
 var bcrypt = require('bcrypt');
 var async = require('async');
+var passport = require('passport');
 
 var router = express.Router();
 
@@ -8,9 +9,6 @@ var router = express.Router();
 // 회원가입
 router.post('/', function (req, res, next) {
     if (req.secure) {
-        //res.json({
-        //    "message": "가입이 정상적으로 처리되었습니다..."
-        //});
 
         var username = req.body.username;
         var email = req.body.email;
@@ -98,13 +96,31 @@ router.post('/', function (req, res, next) {
     }
 });
 
+
+
+
 //로그인(로컬)
 router.post('/login', function (req, res, next) {
    if (req.secure) {
-       res.json({
-           "message": "로그인 되었습니다..."
-       });
+       //res.json({
+       //    "message": "로그인 되었습니다..."
+       //});
 
+       passport.authenticate('local-login', function (err, user, info) {
+           if (err) {
+               var err = new Error('암호를 확인하십쇼');
+               err.status = 401;
+               next(err);
+           } else {
+               req.logIn(user, function (err) {
+                   if (err) {
+                       next(err);
+                   } else {
+                       res.json(user);
+                   }
+               })
+           }
+       })(req, res, next);
    } else {
        var err = new Error('SSL/TLS Upgrade Required');
        err.status = 426;
