@@ -5,6 +5,9 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var passport = require('passport');
+
+global.pool = require('./config/dbpool');
 
 // mapping mount points with router-level middleware modules   -> mount point와 연결
 var index = require('./routes/index');
