@@ -5,7 +5,7 @@ var async = require('async');
 module.exports = function (passport) {
 
     passport.serializeUser(function (user, done) {   // 사용자 정보를 session에 저장
-        done(null, user.id);
+        done(null, user);
     });
 
     passport.deserializeUser(function (id, done) {
@@ -34,7 +34,7 @@ module.exports = function (passport) {
     });
 
     passport.use('local-login', new LocalStrategy({
-        usernameField: "email",  //
+        usernameField: "email",
         passwordField: "password",
         passReqToCallback: true
     }, function (req, username, password, done) {  // usernameField, passwordField
@@ -53,7 +53,7 @@ module.exports = function (passport) {
             var sql = "SELECT email, password " +
                       "FROM bangdb.user " +
                       "WHERE email = ?";
-            connection.query(sql, [email], function (err, members) {
+            connection.query(sql, [username], function (err, members) {
                 connection.release();
                 if (err) {
                     callback(err);
@@ -88,12 +88,11 @@ module.exports = function (passport) {
 
         async.waterfall([getConnection, selectUser, compareUserInput], function (err, user) {
             if (err) {
-                callback(err);
+                done(err);
             } else {
-                callback(null, connection);
+                done(null, user);
             }
         });
-
     }))
 
 };
