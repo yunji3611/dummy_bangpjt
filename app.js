@@ -8,6 +8,7 @@ var session = require('express-session');
 var passport = require('passport');
 
 global.pool = require('./config/dbpool');
+require('./config/passportconfig')(passport);
 
 // mapping mount points with router-level middleware modules   -> mount point와 연결
 var index = require('./routes/index');
@@ -40,6 +41,8 @@ app.use(session({
     "saveUninitialized": true
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // mount points configutation
