@@ -2,6 +2,8 @@ var express = require('express');
 var bcrypt = require('bcrypt');
 var async = require('async');
 var passport = require('passport');
+//var passport = require('./config/passport');
+
 
 var router = express.Router();
 
@@ -102,12 +104,10 @@ router.post('/', function (req, res, next) {
 //로그인(로컬)
 router.post('/login', function (req, res, next) {
    if (req.secure) {
-       //res.json({
-       //    "message": "로그인 되었습니다..."
-       //});
-
        passport.authenticate('local-login', function (err, user, info) {
            if (err) {
+             next(err);
+           } else if (!user) {
                var err = new Error('암호를 확인하십쇼');
                err.status = 401;
                next(err);
@@ -116,9 +116,13 @@ router.post('/login', function (req, res, next) {
                    if (err) {
                        next(err);
                    } else {
-                       res.json(user);
+                       loginmessage = {
+                           "message": "로그인 되었습니다."
+                       };
+                       res.json(loginmessage);
+                      // res.json(user);
                    }
-               })
+               });
            }
        })(req, res, next);
    } else {
