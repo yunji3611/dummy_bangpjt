@@ -13,94 +13,157 @@ router.get('/', function (req, res, next) {
         });
     }
 
+    var post_type = parseInt(req.query.post_type);
+    var page = parseInt(req.query.page);
+    page = isNaN(page) ? 1 : page;
+    post_type = post_type > 1 ? 0 : post_type;
+
+    var postList = [];
+    var limit = 10;
+    var offset = (page - 1) * limit;
     function selectPosts(connection, callback) {
-        var sql = "select p.id, p.content, p.post_time, p.category, u.username, u.photo_path,  " +
-            "f.brand, f.size, f.link, f.name, f.no, f.fphoto_path, " +
-            "c.color , re.reply_content, re.reply_time, re.username, " +
-            "fi.file_path, h.tag " +
-            "from bangdb.post p left join (select id, username, photo_path from bangdb.user) u " +
-            "on(p.user_id = u.id) " +
-            "left join furniture f on(p.id = f.post_id) " +
-            "left join bangdb.reply re on(p.id = re.post_id) " +
-            "left join bangdb.file fi on(p.id = fi.post_id) " +
-            "left join bangdb.hashtag_has_post hp on(p.id = hp.post_id) " +
-            "left join bangdb.hashtag h on (h.id = hp.hashtag_id) " +
-            "left join bangdb.color c on(f.color_id = c.id);";
 
-        connection.query(sql, [], function (err, results) {
-            connection.release; //미리 커넥션확인.
+
+
+        var post1 = "select p.id, p.content, p.category, u.username " +
+          "from post p join (select id, username, photo_path from user) u " +
+          "on(p.user_id = u.id) " +
+          "where post_type= ? " +
+          "limit ? offset ? ";
+        connection.query(post1, [post_type, limit, offset], function (err, results) {
             if (err) {
                 callback(err);
             } else {
-                callback(null, results);
+                callback(null, connection, results);
             }
         });
-
     }
 
-    function resultJSON(results, callback) {
-        var postList = [];
+    function selectPosts2(connection, results, callback) {
+        async.eachSeries(results, function (element, callback) {
+            var hashtag = "select h.tag, hp.post_id " +
+              "from hashtag_has_post hp join hashtag h on (h.id = hp.hashtag_id) " +
+              "join post p on(p.id=hp.post_id) " +
+              "where post_type= ? and p.id= ?";
 
-        async.each(results, function (item, callback) {
-            var postresult = {
-                "list": [{
-                    "post_id": results[0]["id"],
-                    "photo_url": results[0]["photo_path"],
-                    "interior_url": results[0]["file_path"],
-                    "scrap_count": "보류",
-                    "post_count": results.length,
-                    "hashtag": results[0]["tag"],
-                    "category": results[0]["category"],
-                    "detail": [{
-                        "furniture_url": results[0]["fphoto_path"],
-                        "furniture": [{
-                            "브랜드명": results[0]["brand"], "소품이름": results[0]["name"], "품번": results[0]["no"],
-                            "사이즈": results[0]["size"], "상세보기": results[0]["link"], "색상": results[0]["color"]
-                        }],
-                        "content": results[0]["content"],
-                        "reply_username": results[0]["re.reply_content"],
-                        "reply": results[0]["reply_content"]
-                    }]
-                }]
-            }
-            postList.push(postresult);
-            callback(null);
+            var interior = "select file_path, post_id " +
+              "from file ";
 
-        }, function (err) {
-            if (err) {
-                callback(err);
-            } else {
-                var results =
-                {
-                    "result": {
-                        "message": "게시물 목록이 조회되었습니다.",
-                        "data": {
-                            "count": 20,
-                            "page": 1,
-                            "listperPage": 6
-                        },
-                        "postList" :postList
+            var photo = "select u.photo_path, p.id " +
+              "from post p join user u on (p.user_id = u.id) ";
+            index = 0;
+            async.series([function (callback) {
+                connection.query(hashtag, [post_type, element.id], function (err, tag_results) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        results[index].tag = tag_results;
+                        callback(null);
                     }
+                });
 
-                };
-                callback(null, results);
-            }
+            }, function (callback) {
+                connection.query(interior, [post_type, element.id], function (err, interior_results) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        results[index].file_path = interior_results;
+                        callback(null);
+                    }
+                });
+            }, function (callback) {
+                connection.query(photo, [post_type, element.id], function (err, photo_results) {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        results[index].photo_path = photo_results;
+                        callback(null);
+                    }
+                });
+            }], function (err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    index++;
+                    callback(null);
+                }
+
+            }, function (err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    connection.release();
+                    callback(null, results);
+                }
+
+            });
         });
     }
 
-//callback(null, results);
+
+function resultJSON(results, callback) {
+    var postList = [];
 
 
-    async.waterfall([getConnection, selectPosts, resultJSON], function (err, result) {
+    async.forEach(results, function (results, callback) {
+        var postresult = {
+            "list": [{
+                "post_id": results.id,
+                "photo_url": results.photo_path,
+                "interior_url": results.file_path,
+                "scrap_count": "확인",
+                "post_count": results.length,
+                "hashtag": results.tag,
+                "category": results.category,
+                "detail": [{
+                    "furniture_url": results.fphoto_path,
+                    "furniture": [{
+                        "브랜드명": results.brand, "소품이름": results.name, "품번": results.no,
+                        "사이즈": results.size, "상세보기": results.link, "색상": results.color
+                    }],
+                    "content": results.content,
+                    "reply_username": results.reply_content,
+                    "reply": results.reply_content
+                }]
+            }]
+        }
+        postList.push(postresult);
+        callback(null);
+
+    }, function (err) {
+        if (err) {
+            callback(err);
+        } else {
+            var results =
+            {
+                "result": {
+                    "message": "게시물 목록이 조회되었습니다.",
+                    "data": {
+                        "count": "",
+                        "page": "page",
+                        "listperPage": "limit"
+                    },
+                    "postList": postList
+                }
+
+            };
+            callback(null, results);
+        }
+    });
+}
+
+
+    async.waterfall([getConnection, selectPosts, selectPosts2, resultJSON], function (err, result) {
         if (err) {
             next(err); //처리도중문제이거나 쿼리수행증..// 뭇
         } else {
             res.json(result);
 
         }
-    })
+    });
+});
 
-})
+
 
 
 router.post('/', function (req, res, next) {
