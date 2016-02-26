@@ -35,7 +35,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(session({
-    "secret": "0mvmPALOZpl/LdxolZ/nCpTG9gI8+4VPvs45PqSoAwQ=",      //process.env.SERVER_KEY
+    "secret": process.env.SERVER_KEY,      //process.env.SERVER_KEY //0mvmPALOZpl/LdxolZ/nCpTG9gI8+4VPvs45PqSoAwQ=
     "cookie": { "maxAge": 86400000 },   // 하루(24)동안 유효 60(초)*60(분)*24(시간)*365(일)*1000
     "resave": true,
     "saveUninitialized": true
