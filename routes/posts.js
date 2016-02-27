@@ -12,25 +12,34 @@ router.get('/', function (req, res, next) {
             }
         });
     }
-
+    var tag = req.query.tag;
     var post_type = parseInt(req.query.post_type);
     var page = parseInt(req.query.page);
     page = isNaN(page) ? 1 : page;
     post_type = post_type > 1 ? 0 : post_type;
+    console.log('tag:', tag);
+    console.log(page);
 
     var postList = [];
     var limit = 10;
     var offset = (page - 1) * limit;
     function selectPosts(connection, callback) {
 
+        var post1 = "select p.id, p.content, p.category, u.username, u.photo_path, fi.file_path " +
+                    "from post p join (select id, username, photo_path from user) u "+
+                    "on(p.user_id = u.id) " +
+                    "join file fi on(p.id = fi.post_id) "+
+                    "join hashtag_has_post hp on (p.id = hp.post_id) "+
+                    "join hashtag h on (h.id = hp.hashtag_id) " ;
+        if(tag != null) {
+            //console.log('nn');
+            var select = "where h.tag like " + '"%' + tag + '%"';
+            post1 += select;
+            post1 += "limit ? offset ? ";
+            //console.log(select);
 
-
-        var post1 = "select p.id, p.content, p.category, u.username " +
-          "from post p join (select id, username, photo_path from user) u " +
-          "on(p.user_id = u.id) " +
-          "where post_type= ? " +
-          "limit ? offset ? ";
-        connection.query(post1, [post_type, limit, offset], function (err, results) {
+        }
+        connection.query(post1, [limit, offset], function (err, results) {
             if (err) {
                 callback(err);
             } else {
@@ -40,95 +49,94 @@ router.get('/', function (req, res, next) {
     }
 
     function selectPosts2(connection, results, callback) {
-        async.eachSeries(results, function (element, callback) {
-            var hashtag = "select h.tag, hp.post_id " +
-              "from hashtag_has_post hp join hashtag h on (h.id = hp.hashtag_id) " +
-              "join post p on(p.id=hp.post_id) " +
-              "where post_type= ? and p.id= ?";
+        var hashtag = "select h.tag, hp.post_id " +
+          "from hashtag_has_post hp join hashtag h on (h.id = hp.hashtag_id) " +
+          "join post p on(p.id=hp.post_id) " +
+          "where p.id= ?";
 
-            var interior = "select file_path, post_id " +
-              "from file ";
+        var furniture = "select p.id, f.fphoto_path, f.brand, f.name, f.no, f.size, f.color_id, f.link "+
+                        "from furniture f join post p on(f.post_id = p.id) " +
+                        "join color c on(f.color_id = c.id) "+
+                        "where p.id = ? ";
 
-            var photo = "select u.photo_path, p.id " +
-              "from post p join user u on (p.user_id = u.id) ";
-            index = 0;
-            async.series([function (callback) {
-                connection.query(hashtag, [post_type, element.id], function (err, tag_results) {
+        var reply = "select p.id,  r.username as r_username, r.reply_content, r.reply_time " +
+          "from reply r join post p on(r.post_id = p.id) " +
+          "where p.id = ? ";
+
+        var index = 0;
+        async.eachSeries(results, function (element, cb1) {
+            async.series([function (cb2) {
+                connection.query(hashtag, [element.id], function (err, tag_results) {
                     if (err) {
-                        callback(err);
+                        cb2(err);
                     } else {
                         results[index].tag = tag_results;
-                        callback(null);
+                        cb2(null);
                     }
                 });
 
-            }, function (callback) {
-                connection.query(interior, [post_type, element.id], function (err, interior_results) {
+            }, function (cb2) {
+                connection.query(furniture, [element.id], function (err, furniture_results) {
                     if (err) {
-                        callback(err);
+                        cb2(err);
                     } else {
-                        results[index].file_path = interior_results;
-                        callback(null);
+                        results[index].furnitures = furniture_results;
+                        console.log(furniture_results);
+                        cb2(null);
                     }
                 });
-            }, function (callback) {
-                connection.query(photo, [post_type, element.id], function (err, photo_results) {
+            }, function (cb2) {
+                connection.query(reply, [element.id], function (err, reply_results) {
                     if (err) {
-                        callback(err);
+                        cb2(err);
                     } else {
-                        results[index].photo_path = photo_results;
-                        callback(null);
+                        results[index].replys = reply_results;
+                        cb2(null);
                     }
                 });
             }], function (err) {
                 if (err) {
-                    callback(err);
+                    cb1(err);
                 } else {
                     index++;
-                    callback(null);
+                    cb1(null);
                 }
-
-            }, function (err) {
-                if (err) {
-                    callback(err);
-                } else {
-                    connection.release();
-                    callback(null, results);
-                }
-
             });
+        }, function (err) {
+            connection.release();
+            if (err) {
+                callback(err);
+            } else {
+
+                callback(null, results);
+            }
         });
     }
-
 
 function resultJSON(results, callback) {
     var postList = [];
 
 
-    async.forEach(results, function (results, callback) {
+    async.forEach(results, function (results, cb) {
         var postresult = {
-            "list": [{
+
                 "post_id": results.id,
                 "photo_url": results.photo_path,
                 "interior_url": results.file_path,
                 "scrap_count": "확인",
-                "post_count": results.length,
+              // "post_count": "",
                 "hashtag": results.tag,
                 "category": results.category,
-                "detail": [{
-                    "furniture_url": results.fphoto_path,
-                    "furniture": [{
-                        "브랜드명": results.brand, "소품이름": results.name, "품번": results.no,
-                        "사이즈": results.size, "상세보기": results.link, "색상": results.color
-                    }],
-                    "content": results.content,
-                    "reply_username": results.reply_content,
-                    "reply": results.reply_content
-                }]
-            }]
-        }
+                "furniture_url": results.fphoto_path,
+                "furniture": results.furnitures,
+                "content": results.content,
+                "reply_username": results.replys.r_username,
+                "reply": results.replys
+
+
+        };
         postList.push(postresult);
-        callback(null);
+        cb(null);
 
     }, function (err) {
         if (err) {
@@ -139,9 +147,9 @@ function resultJSON(results, callback) {
                 "result": {
                     "message": "게시물 목록이 조회되었습니다.",
                     "data": {
-                        "count": "",
-                        "page": "page",
-                        "listperPage": "limit"
+                        //"count": results.length,
+                        "page": page,
+                        "listperPage": limit
                     },
                     "postList": postList
                 }
@@ -223,41 +231,9 @@ router.delete('/:post_id/replies/:reply_id', function (req, res, next) {
 
 });
 
-router.get('/', function (req, res, next) {
-    var result = {
-        "result": {
-            "message": "게시물 목록이 조회되었습니다.",
-            "data": {
-                "count": 20,
-                "page": 1,
-                "listperPage": 6
-            },
-            "list": [{
-                "id": 1111,
-                "photo_url": "./public/photos/user/profile.jpg",
-                "interior_url": "./public/photos/interior/europe.jpg",
-                "scrap_count": 22,
-                "post_count": 50,
-                "hashtag": ["의자", "침대", "북유럽"],
-                "category": "북유럽",
-                "detail": [{
-                    "furniture_url": "./public/photos/furniture/chair.jpg",
-                    "furniture": [{
-                        "브랜드명": "IKEA", "소품이름": "의자", "품번": "ABC-000",
-                        "사이즈": "20*40", "상세보기": "link", "색상": "white"
-                    },
-                        {
-                            "브랜드명": "한샘", "소품이름": "침대", "품번": "BBC-002",
-                            "사이즈": "100*200", "상세보기": "link", "색상": "black"
-                        }],
-                    "content": "게시물 내용",
-                    "reply": "게시물 댓글"
-                }]
-            }]
-        }
-    }
-    res.json(result);
-});
+//var test = parseInt(1);
+//console.log(test);
+
 
 
 module.exports = router;
