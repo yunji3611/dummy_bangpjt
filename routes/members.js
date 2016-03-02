@@ -2,7 +2,6 @@ var express = require('express');
 var bcrypt = require('bcrypt');
 var async = require('async');
 var passport = require('passport');
-//var passport = require('./config/passport');
 
 
 var router = express.Router();
@@ -31,12 +30,11 @@ router.post('/', function (req, res, next) {
                       "FROM bangdb.user "+
                       "WHERE email = ?";
             connection.query(sql, [email], function (err, members) {
+                connection.release();
                 if (err) {
-                    connection.release();
                     callback(err);
                 } else {
                     if (members.length) {
-                        connection.release();
                         var err = new Error('아이디 중복!!');
                         err.status = 409;
                         callback(err);
@@ -116,10 +114,12 @@ router.post('/login', function (req, res, next) {
                    if (err) {
                        next(err);
                    } else {
+                       console.log("req.user :"+req.user.id);
                        res.json({
                            "message": "로그인 되었습니다"
                        });
-                      // res.json(user);
+                       //res.json(user);
+
                    }
                });
            }
