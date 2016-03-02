@@ -108,7 +108,7 @@ router.post('/login', function (req, res, next) {
            if (err) {
              next(err);
            } else if (!user) {
-               var err = new Error('암호를 확인하십쇼');
+               var err = new Error('암호를 확인해주세요');
                err.status = 401;
                next(err);
            } else {
@@ -116,10 +116,9 @@ router.post('/login', function (req, res, next) {
                    if (err) {
                        next(err);
                    } else {
-                       loginmessage = {
-                           "message": "로그인 되었습니다."
-                       };
-                       res.json(loginmessage);
+                       res.json({
+                           "message": "로그인 되었습니다"
+                       });
                       // res.json(user);
                    }
                });
@@ -133,9 +132,24 @@ router.post('/login', function (req, res, next) {
 });
 
 //로그인(페이스북)
-router.post('/facebook', function (req, res, next) {
+router.post('/facebook/token', function (req, res, next) {
     if (req.secure) {
-
+        passport.authenticate('facebook-token', function (err, user, info) {
+            if (err) {
+                next(err);
+            } else {
+                req.login(user, function (err) {
+                    if (err) {
+                        next(err);
+                    } else {
+                        res.json({
+                            "message": "페이스북 로그인 되었습니다"
+                        });
+                        // res.json(user);
+                    }
+                })
+            }
+        })
     } else {
         var err = new Error('SSL/TLS Upgrade Required');
         err.status = 426;
