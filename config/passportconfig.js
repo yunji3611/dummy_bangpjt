@@ -7,7 +7,7 @@ var FacebookTokenStrategy = require('passport-facebook-token');
 module.exports = function (passport) {
 
     passport.serializeUser(function (user, done) {   // 사용자 정보를 session에 저장
-        done(null, user);
+        done(null, user.id);
     });
 
     passport.deserializeUser(function (id, done) {
@@ -15,7 +15,7 @@ module.exports = function (passport) {
             if (err) {
                 done(err);
             } else {
-                var sql = "SELECT id, username, facebook_id, facebook_token, facebook_name  "+
+                var sql = "SELECT id, username, email, facebook_id, facebook_token, facebook_name  "+
                           "FROM bangdb.user "+
                           "WHERE id = ?";
 
@@ -27,6 +27,7 @@ module.exports = function (passport) {
                             "id": members[0].id,
                             "username": members[0].username,
                             "email": members[0].email
+
                         };
                         done(null, user);
                     }
@@ -52,7 +53,7 @@ module.exports = function (passport) {
         }
 
         function selectUser(connection, callback) {
-            var sql = "SELECT email, password " +
+            var sql = "SELECT id, email, password " +
                       "FROM bangdb.user " +
                       "WHERE email = ?";
             connection.query(sql, [username], function (err, members) {
@@ -65,6 +66,7 @@ module.exports = function (passport) {
                         callback(err);
                     } else {
                         var user = {
+                            "id": members[0].id,
                             "email": members[0].email,
                             "hashPassword": members[0].password
                         };
