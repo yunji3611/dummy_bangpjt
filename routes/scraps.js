@@ -115,6 +115,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
         var sql = "INSERT INTO bangdb.scrap(user_id, post_id) "+
                   "VALUES (?, ?)";
         connection.query(sql, [user.id, postId], function (err, post) {
+            connection.release();
             if (err) {
                 callback(err);
             } else {
