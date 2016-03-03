@@ -62,7 +62,8 @@ router.get('/', isLoggedIn, function (req, res, next) {
                 callback(err);
             } else {
                 var result = {
-                  "postlist": postlist
+                    "postlist": postlist,
+                    "myscrap_count": index
                 };
                 callback(null, result);
             }
@@ -128,7 +129,9 @@ router.post('/', isLoggedIn, function (req, res, next) {
         if (err) {
             next(err);
         } else {
-            res.json("스크랩되었습니다");
+            res.json({
+                "message": "스크랩되었습니다"
+            });
         }
     })
 
