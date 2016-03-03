@@ -30,7 +30,6 @@ router.post('/', function (req, res, next) {
                       "FROM bangdb.user "+
                       "WHERE email = ?";
             connection.query(sql, [email], function (err, members) {
-                connection.release();
                 if (err) {
                     callback(err);
                 } else {
