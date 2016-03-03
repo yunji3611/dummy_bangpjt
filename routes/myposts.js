@@ -61,7 +61,8 @@ router.get('/', isLoggedIn, function (req, res, next) {
                 callback(err);
             } else {
                 var result = {
-                    "postList" :postList
+                    "postList" :postList,
+                    "mypost_count" : index
                 };
                 callback(null, result);
             }
