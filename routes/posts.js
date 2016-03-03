@@ -36,7 +36,7 @@ router.get('/', function (req, res, next) {
         connection.query(post1, [limit, offset], function (err, results) {
             if (err) {
                 callback(err);
-            } else {
+            } else { //ddd
                 callback(null, connection, results);
             }
         });
