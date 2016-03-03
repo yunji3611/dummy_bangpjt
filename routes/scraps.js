@@ -82,11 +82,54 @@ router.get('/', isLoggedIn, function (req, res, next) {
 });
 
 // 게시물 스크랩
-router.post('/', function (req, res, next) {
+router.post('/', isLoggedIn, function (req, res, next) {
+    var user = req.user;
+    var postId = req.body.post_id;
 
-        res.json({
-            "message": "게시글 스크랩이 완료되었습니다..."
+    function getConnection(callback) {
+        pool.getConnection(function (err, connection) {
+            if (err) {
+                callback(err);
+            } else {
+                callback(null, connection);
+            }
         })
+    }
+
+    function selectScrap(connection, callback) {
+        var sql = "SELECT post_id "+
+                  "FROM bangdb.scrap "+
+                  "WHERE user_id = ? and post_id = ?";
+        connection.query(sql, [user.id, postId], function (err, post) {
+            if (post.length) {
+                var err = new Error("이미 스크랩되었습니다");
+                err.status = 409;
+                callback(err);
+            } else {
+                callback(null, connection);
+            }
+        });
+    }
+
+    function insertScrap(connection, callback) {
+        var sql = "INSERT INTO bangdb.scrap(user_id, post_id) "+
+                  "VALUES (?, ?)";
+        connection.query(sql, [user.id, postId], function (err, post) {
+            if (err) {
+                callback(err);
+            } else {
+                callback(null, post);
+            }
+        })
+    }
+
+    async.waterfall([getConnection, selectScrap, insertScrap], function (err, post) {
+        if (err) {
+            next(err);
+        } else {
+            res.json("스크랩되었습니다");
+        }
+    })
 
 });
 
