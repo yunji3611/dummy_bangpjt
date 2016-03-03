@@ -70,7 +70,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
 
     async.waterfall([getConnection, selectMyPosts, resultJSON], function (err, result) {
         if (err) {
-            callback(err);
+            next(err);
         } else {
             res.json(result);
         }
