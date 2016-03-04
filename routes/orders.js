@@ -63,7 +63,7 @@ router.post ('/', isLoggedIn, function (req, res, next) {
             if (err) {
                 next(err);
             } else {
-                res.json("임대되었습니다");
+                res.json({"result":{"message":"임대되었습니다"}});
             }
         })
 

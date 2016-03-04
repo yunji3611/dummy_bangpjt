@@ -48,7 +48,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
         function resultJSON(info, callback) {
             var result = {
                 "username": info[0].username,
-                "photo_path": info[0].photo_path
+                "photo_url": info[0].photo_path
             };
             callback(null, result);
         }
@@ -57,7 +57,12 @@ router.get('/', isLoggedIn, function (req, res, next) {
             if (err) {
                 next(err);
             } else {
-                res.json(result);
+                res.json({
+                    "result": {
+                        "message": "프로필이 조회되었습니다",
+                        "mypageData": result
+                    }
+                });
             }
         })
     } else {

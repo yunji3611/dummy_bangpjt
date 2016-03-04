@@ -50,6 +50,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
         async.each(scraps, function (item, callback) {
             var posts = {
                 "post_id" : scraps[index]["id"],
+                //"photo_url"
                 "file_url": scraps[index]["file_path"],
                 "hash_tag": scraps[index]["tag"]
             };
@@ -75,8 +76,12 @@ router.get('/', isLoggedIn, function (req, res, next) {
         if (err) {
             next(err);
         } else {
-            res.json(result);
+            res.json({
+                "result" : {"message" : "스크랩함 조회가 성공하였습니다",
+                            "scrapData": result}
+            })
         }
+
     });
 
 
@@ -130,7 +135,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
             next(err);
         } else {
             res.json({
-                "message": "스크랩되었습니다"
+                "result": {"message": "스크랩되었습니다"}
             });
         }
     })

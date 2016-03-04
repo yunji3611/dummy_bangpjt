@@ -14,6 +14,7 @@ router.post('/', function (req, res, next) {
         var username = req.body.username;
         var email = req.body.email;
         var password = req.body.password;
+        // var preferences
 
         function getConnection(callback) {
             pool.getConnection(function(err, connection) {
@@ -83,7 +84,9 @@ router.post('/', function (req, res, next) {
                 next(err);
             } else {
                 result.message = "회원가입이 완료되었습니다."
-                res.json(result);
+                res.json({
+                    "result": result
+                });
             }
         })
 
@@ -115,7 +118,7 @@ router.post('/login', function (req, res, next) {
                    } else {
                        console.log("req.user :"+req.user.id);
                        res.json({
-                           "message": "로그인 되었습니다"
+                            "result":{"message": "로그인 되었습니다"}
                        });
                        //res.json(user);
 
@@ -142,7 +145,7 @@ router.post('/facebook/token', function (req, res, next) {
                         next(err);
                     } else {
                         res.json({
-                            "message": "페이스북 로그인 되었습니다"
+                            "result": {"message": "페이스북 로그인 되었습니다"}
                         });
                         // res.json(user);
                     }

@@ -48,9 +48,10 @@ router.get('/', isLoggedIn, function (req, res, next) {
         var index = 0;
         async.each(myposts, function (item, callback) {
             var posts = {
-                "postId": myposts[index]["id"],
-                "file": myposts[index]["file_path"],
-                "hashtag": myposts[index]["tag"]
+                "post_id": myposts[index]["id"],
+                //"photo_url" : 유저사진
+                "file_url": myposts[index]["file_path"],
+                "hash_tag": myposts[index]["tag"]
             };
             postList.push(posts);
             callback(null);
@@ -73,7 +74,12 @@ router.get('/', isLoggedIn, function (req, res, next) {
         if (err) {
             next(err);
         } else {
-            res.json(result);
+            res.json({
+                "result": {
+                    "message": "내가 쓴 글이 조회되었습니다",
+                    "postList": result
+                }
+            });
         }
     });
 });
