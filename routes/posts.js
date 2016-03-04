@@ -29,7 +29,7 @@ router.get('/', function (req, res, next) {
                     "on(p.user_id = u.id) " +
                     "join file fi on(p.id = fi.post_id) " +
                     "join hashtag_has_post hp on (p.id = hp.post_id) " +
-                    "join hashtag h on (h.id = hp.hashtag_id) "
+                    "join hashtag h on (h.id = hp.hashtag_id) " +
                     "where post_type = ? " +
                     "limit? offset ? ";
 
@@ -113,7 +113,6 @@ function resultJSON(results, callback) {
 
     async.forEach(results, function (results, cb) {
         var postresult = {
-
                 "post_id": results.id,
                 "photo_url": results.photo_path,
                 "interior_url": results.file_path,
@@ -125,8 +124,6 @@ function resultJSON(results, callback) {
                 "content": results.content,
                 "reply_username": results.replys.r_username,
                 "reply": results.replys
-
-
         };
         postList.push(postresult);
         cb(null);
@@ -152,17 +149,15 @@ function resultJSON(results, callback) {
         }
     });
 }
-    if (req.query.post_type) {
 
-        async.waterfall([getConnection, selectPosts, selectPosts2], function (err, result) {
+        async.waterfall([getConnection, selectPosts, selectPosts2, resultJSON], function (err, result) {
             if (err) {
-                next(err); //처리도중문제이거나 쿼리수행증..// 뭇
+                next(err);
             } else {
                 res.json(result);
 
             }
         });
-    }
 });
 
 
