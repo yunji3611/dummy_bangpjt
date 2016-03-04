@@ -114,15 +114,14 @@ router.get('/', function (req, res, next) {
             var postresult = {
 
                 "post_id": results.id,
+                "username" : results.username,
                 "photo_url": results.photo_path,
                 "file_url": results.file_path,
                 "scrap_count": "확인",
-                // "post_count": "",
                 "hash_tag": results.tag,
                 "category": results.category,
-                "furnitures": results.furnitures,
                 "content": results.content,
-                //"reply_username": results.replys.username,
+                "furnitures": results.furnitures,
                 "reply": results.replies
 
 
