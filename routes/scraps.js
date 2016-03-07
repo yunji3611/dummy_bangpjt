@@ -1,3 +1,6 @@
+/**
+ * Created by skplanet on 2016-03-07.
+ */
 var express = require('express');
 var async = require('async');
 var router = express.Router();
@@ -16,50 +19,75 @@ function isLoggedIn(req, res, next) {
 router.get('/', isLoggedIn, function (req, res, next) {
     var user = req.user;
 
-    function getConnection (callback) {
-        pool.getConnection(function(err, connection) {
+    function getConnection(callback) {
+        pool.getConnection(function (err, connection) {
             if (err) {
-                callback (err);
+                callback(err);
             } else {
                 callback(null, connection);
             }
         });
     }
 
-    function selectScrap (connection, callback) {
-        var sql ="SELECT p.id, fi.file_path, h.tag, u.photo_path "+
-                "FROM bangdb.scrap s LEFT JOIN bangdb.post p on (s.post_id = p.id) "+
-                "LEFT JOIN bangdb.file fi on(p.id = fi.post_id) "+
-                "LEFT JOIN bangdb.hashtag_has_post hp on(p.id = hp.post_id) "+
-                "LEFT JOIN bangdb.hashtag h on (h.id = hp.hashtag_id) "+
-                "LEFT JOIN bangdb.user u on (u.id = s.user_id) "+
-                "WHERE s.user_id = ? " +
-                "group by p.id";
+    function selectScrap(connection, callback) {
+        var sql = "SELECT p.id as id, fi.file_path, u.photo_path " +
+            "FROM bangdb.scrap s LEFT JOIN bangdb.post p on (s.post_id = p.id) " +
+            "LEFT JOIN bangdb.file fi on(p.id = fi.post_id) " +
+            "LEFT JOIN bangdb.hashtag_has_post hp on(p.id = hp.post_id) " +
+            "LEFT JOIN bangdb.user u on (u.id = s.user_id) " +
+            "WHERE s.user_id = ? " +
+            "GROUP BY p.id";
         connection.query(sql, [user.id], function (err, scraps) {
-            connection.release();
+            //connection.release();
             if (err) {
+                connection.release();
                 callback(err);
             } else {
-                callback(null, scraps);
+                callback(null, connection, scraps);
             }
         });
     }
 
-    function resultJSON (scraps, callback) {
+    function resultJSON(connection, scraps, callback) {
         var postlist = [];
-        var index =0;
-        async.each(scraps, function (item, callback) {
-            var posts = {
-                "post_id" : scraps[index]["id"],
-                "photo_url": scraps[index]["photo_path"],
-                "file_url": scraps[index]["file_path"],
-                "hash_tag": scraps[index]["tag"]
-            };
-            index ++;
-            postlist.push(posts);
-            callback(null);
-
+        var index = 0;
+        async.each(scraps, function (scrap, cb1) {
+            console.log('********post_id******'+scrap.id);
+            var sql =   "SELECT h.tag " +
+                        "FROM bangdb.post p  LEFT JOIN bangdb.hashtag_has_post hp on(p.id = hp.post_id) " +
+                        "LEFT JOIN bangdb.hashtag h on (h.id = hp.hashtag_id) " +
+                        "WHERE p.id = ?";
+            connection.query(sql, [scrap.id], function (err, tags) {
+                if (err) {
+                    connection.release();
+                    cb2(err);
+                } else {
+                    var tagList = [];
+                    async.each(tags, function (tags, cb2) {
+                        var tag = {
+                            "tag": tags.tag
+                        };
+                        tagList.push(tag);
+                        cb2(null);
+                    }, function (err) {
+                        if (err) {
+                            cb1(err);
+                        } else {
+                            var posts = {
+                                "post_id": scrap.id,
+                                "photo_url": scrap.photo_path,
+                                "file_url": scrap.file_path,
+                                "hash_tag": tagList
+                            };
+                            index++;
+                            postlist.push(posts);
+                            cb1(null);
+                        }
+                    });
+                }
+            });
         }, function (err) {
+            connection.release();
             if (err) {
                 callback(err);
             } else {
@@ -73,13 +101,16 @@ router.get('/', isLoggedIn, function (req, res, next) {
 
     }
 
+
     async.waterfall([getConnection, selectScrap, resultJSON], function (err, result) {
         if (err) {
             next(err);
         } else {
             res.json({
-                "result" : {"message" : "스크랩함 조회가 성공하였습니다",
-                            "scrapData": result}
+                "result": {
+                    "message": "스크랩함 조회가 성공하였습니다",
+                    "scrapData": result
+                }
             })
         }
 
@@ -104,9 +135,9 @@ router.post('/', isLoggedIn, function (req, res, next) {
     }
 
     function selectScrap(connection, callback) {
-        var sql = "SELECT post_id "+
-                  "FROM bangdb.scrap "+
-                  "WHERE user_id = ? and post_id = ?";
+        var sql = "SELECT post_id " +
+            "FROM bangdb.scrap " +
+            "WHERE user_id = ? and post_id = ?";
         connection.query(sql, [user.id, postId], function (err, post) {
             if (post.length) {
                 var err = new Error("이미 스크랩되었습니다");
@@ -119,8 +150,8 @@ router.post('/', isLoggedIn, function (req, res, next) {
     }
 
     function insertScrap(connection, callback) {
-        var sql = "INSERT INTO bangdb.scrap(user_id, post_id) "+
-                  "VALUES (?, ?)";
+        var sql = "INSERT INTO bangdb.scrap(user_id, post_id) " +
+            "VALUES (?, ?)";
         connection.query(sql, [user.id, postId], function (err, post) {
             connection.release();
             if (err) {
