@@ -27,7 +27,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
     }
 
     function selectMyPosts (connection, callback) {
-        var sql =   "SELECT p.id, fi.file_path, h.tag, u.photo_path " +
+        var sql =   "SELECT p.id as id, fi.file_path, u.photo_path " +
                     "FROM bangdb.post p	LEFT JOIN bangdb.file fi on(p.id = fi.post_id) " +
                     "LEFT JOIN bangdb.hashtag_has_post hp on(p.id = hp.post_id) " +
                     "LEFT JOIN bangdb.hashtag h on (h.id = hp.hashtag_id) " +
@@ -35,40 +35,65 @@ router.get('/', isLoggedIn, function (req, res, next) {
                     "WHERE user_id = ? " +
                     "group by p.id";
         connection.query(sql, [user.id], function (err, myposts) {
-            connection.release();
+            //connection.release();
             if (err) {
                 callback(err);
             } else {
-                callback(null, myposts);
+                callback(null, connection, myposts);
             }
         })
     }
 
-    function resultJSON (myposts, callback) {
+    function resultJSON (connection, myposts, callback) {
         var postList = [];
         var index = 0;
-        async.each(myposts, function (item, callback) {
-            var posts = {
-                "post_id": myposts[index]["id"],
-                "photo_url" : myposts[index]["photo_path"],
-                "file_url": myposts[index]["file_path"],
-                "hash_tag": myposts[index]["tag"]
-            };
-            postList.push(posts);
-            callback(null);
-            index++;
-
+        async.each(myposts, function (mypost, cb1) {
+            var sql =   "SELECT h.tag " +
+                        "FROM bangdb.post p  LEFT JOIN bangdb.hashtag_has_post hp on(p.id = hp.post_id) " +
+                        "LEFT JOIN bangdb.hashtag h on (h.id = hp.hashtag_id) " +
+                        "WHERE p.id = ?";
+            connection.query(sql, [mypost.id], function (err, tags) {
+                if (err) {
+                    connection.release();
+                    cb2(err);
+                } else {
+                    var tagList = [];
+                    async.each(tags, function (tags, cb2) {
+                        var tag = {
+                            "tag": tags.tag
+                        };
+                        tagList.push(tag);
+                        cb2(null);
+                    }, function (err) {
+                        if (err) {
+                            cb1(err);
+                        } else {
+                            var posts = {
+                                "post_id": mypost.id,
+                                "photo_url": mypost.photo_path,
+                                "file_url": mypost.file_path,
+                                "hash_tag": tagList
+                            };
+                            index++;
+                            postList.push(posts);
+                            cb1(null);
+                        }
+                    });
+                }
+            });
         }, function (err) {
+            connection.release();
             if (err) {
                 callback(err);
             } else {
                 var result = {
-                    "postList" :postList,
-                    "mypost_count" : index
+                    "postList": postList,
+                    "myscrap_count": index
                 };
                 callback(null, result);
             }
         });
+
     }
 
     async.waterfall([getConnection, selectMyPosts, resultJSON], function (err, result) {
@@ -78,7 +103,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
             res.json({
                 "result": {
                     "message": "내가 쓴 글이 조회되었습니다",
-                    "postList": result
+                    "postData": result
                 }
             });
         }
