@@ -3,6 +3,7 @@ var async= require('async');
 
 var router = express.Router();
 
+// 메인페이지 목록 조회
 router.get('/', function (req, res, next) {
   function getConnection(callback) {
     pool.getConnection(function(err, connection) {
