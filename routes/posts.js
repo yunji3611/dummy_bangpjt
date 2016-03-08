@@ -444,11 +444,13 @@ router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
     })
   }
 
-  async.waterfall([getConnection, insertReply], function (err, result) {
+  async.waterfall([getConnection, insertReply], function(err, result) {
     if (err) {
       next(err);
     } else {
-      res.json(result);
+      request.post('/replypushes', {form: {key:'post_id'}}, function(err, resp) {
+        res.json(result);
+      });
     }
   });
 
