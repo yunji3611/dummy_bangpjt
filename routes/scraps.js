@@ -49,10 +49,9 @@ router.get('/', isLoggedIn, function (req, res, next) {
     }
 
     function resultJSON(connection, scraps, callback) {
-        var postlist = [];
+        var postList = [];
         var index = 0;
         async.each(scraps, function (scrap, cb1) {
-            console.log('********post_id******'+scrap.id);
             var sql =   "SELECT h.tag " +
                         "FROM bangdb.post p  LEFT JOIN bangdb.hashtag_has_post hp on(p.id = hp.post_id) " +
                         "LEFT JOIN bangdb.hashtag h on (h.id = hp.hashtag_id) " +
@@ -60,7 +59,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
             connection.query(sql, [scrap.id], function (err, tags) {
                 if (err) {
                     connection.release();
-                    cb2(err);
+                    cb1(err);
                 } else {
                     var tagList = [];
                     async.each(tags, function (tags, cb2) {
@@ -80,7 +79,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
                                 "hash_tag": tagList
                             };
                             index++;
-                            postlist.push(posts);
+                            postList.push(posts);
                             cb1(null);
                         }
                     });
@@ -92,7 +91,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
                 callback(err);
             } else {
                 var result = {
-                    "postlist": postlist,
+                    "postList": postList,
                     "myscrap_count": index
                 };
                 callback(null, result);
