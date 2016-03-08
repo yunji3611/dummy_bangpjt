@@ -24,21 +24,21 @@ router.get('/', function (req, res, next) {
   var page = parseInt(req.query.page);
   page = isNaN(page) ? 1 : page;
 
-  //var postList = [];
+  console.log('카테고리명:' +category);
   var limit = 10;
   var offset = (page - 1) * limit;
 
   function selectPosts(connection, callback) {
 
-    var post1 = "SELECT p.id, p.category, f.file_path, u.id, u.username, u.photo_path, count(s.post_id) as scrap "+
+    var post1 = "SELECT p.id, p.category, f.file_path, u.username, u.photo_path, count(s.post_id) as scrap "+
                 "FROM post p LEFT JOIN file f ON(f.post_id = p.id) "+
                 "LEFT JOIN scrap s ON(s.post_id = p.id) "+
                 "LEFT JOIN user u ON(u.id = p.user_id) "+
-                "WHERE p.category IS NOT NULL "+
+                "WHERE p.category =? "+
                 "GROUP BY p.id "+
                 "LIMIT ? OFFSET ? ";
 
-    connection.query(post1, [limit, offset], function (err, post_results) {
+    connection.query(post1, [category, limit, offset], function (err, post_results) {
       if (err) {
         callback(err);
       } else { //ddd
@@ -47,122 +47,184 @@ router.get('/', function (req, res, next) {
     });
   }
 
-  function selectPosts2(connection, post_results, callback) {
-    var interiorList =[];
-    async.each(post_results, function(item, cb) {
-      var sql = ""
-      connection
+  function resultJSON(connection, post_results, callback) {
+    var interiorList = [];
+    async.each(post_results, function (item, cb) {
+      var hashtag = "SELECT h.tag " +
+        "FROM hashtag_has_post hp LEFT JOIN hashtag h ON (h.id = hp.hashtag_id) " +
+        "LEFT JOIN post p on(p.id = hp.post_id) " +
+        "WHERE p.id = ? ";
 
-    })
+      var furniture = "SELECT f.fphoto_path, f.brand, f.name, f.no, f.size, f.color_id, f.link "+
+      "FROM furniture f LEFT JOIN post p ON(f.post_id = p.id) "+
+      "LEFT JOIN color c ON(f.color_id = c.id) "+
+      "WHERE p.id = ? ";
 
-    var hashtag = "select h.tag " +
-      "from hashtag_has_post hp join hashtag h on (h.id = hp.hashtag_id) " +
-      "join post p on(p.id=hp.post_id) " +
-      "where post_type= ? and  p.id= ?";
+      var reply = "SELECT r.username as username, r.reply_content, r.reply_time "+
+      "FROM reply r LEFT JOIN post p on(r.post_id = p.id) "+
+      "WHERE p.id = ? ";
 
-    var furniture = "select f.fphoto_path as furniture_url, f.brand, f.name, f.no, f.size, f.color_id, f.link " +
-      "from furniture f join post p on(f.post_id = p.id) " +
-      "join color c on(f.color_id = c.id) " +
-      "where post_type= ? and p.id = ? ";
-
-    var reply = "select  r.username as username, r.reply_content, r.reply_time " +
-      "from reply r join post p on(r.post_id = p.id) " +
-      "where post_type= ? and p.id = ? ";
-
-    var index = 0;
-    async.eachSeries(results, function (element, cb1) {
-      async.series([function (cb2) {
-        connection.query(hashtag, [post_type, element.post_id], function (err, tag_results) {
-          if (err) {
-            cb2(err);
-          } else {
-            results[index].hash_tag = tag_results;
-            cb2(null);
-          }
-        });
-
-      }, function (cb2) {
-        connection.query(furniture, [post_type, element.post_id], function (err, furniture_results) {
-          if (err) {
-            cb2(err);
-          } else {
-            results[index].furnitures = furniture_results;
-            console.log(furniture_results);
-            cb2(null);
-          }
-        });
-      }, function (cb2) {
-        connection.query(reply, [post_type, element.post_id], function (err, reply_results) {
-          if (err) {
-            cb2(err);
-          } else {
-            results[index].replies = reply_results;
-            cb2(null);
-          }
-        });
-      }], function (err) {
+      connection.query(hashtag, [item.id], function (err, hashtags) {
         if (err) {
-          cb1(err);
+          connection.release();
+          cb(err);
         } else {
-          index++;
-          console.log(index);
-          cb1(null);
+          var tagList = [];
+          async.each(hashtags, function (tags, cb2) {
+            var result = {
+              "tag": tags.tag
+            };
+            tagList.push(result);
+            cb2(null);
+          }, function (err) {
+            if (err) {
+              cb(err);
+            } else {
+              var postresult = {
+
+                "post_id": item.id,
+                "username": item.username,
+                "photo_url": item.photo_path,
+                "file_url": item.file_path,
+                "scrap_count": item.scrap,
+                "hash_tag": tagList,
+                "category": item.category,
+                "content": item.content
+                //"furnitures": hashtags.furnitures,
+                //"reply": hashtags.replies
+
+              };
+              interiorList.push(postresult);
+              cb(null);
+            }
+          });
         }
-      });
+      })
+
     }, function (err) {
       connection.release();
       if (err) {
-        callback(err);
-      } else {
 
-        callback(null, results);
-      }
-    });
-  }
-
-  function resultJSON(results, callback) {
-    var postList = [];
-
-
-    async.eachSeries(results, function (results, cb) {
-      var postresult = {
-
-        "post_id": results.id,
-        "username": results.username,
-        "photo_url": results.photo_path,
-        "file_url": results.file_path,
-        "scrap_count": "확인",
-        "hash_tag": results.tag,
-        "category": results.category,
-        "content": results.content,
-        "furnitures": results.furnitures,
-        "reply": results.replies
-
-
-      };
-      postList.push(postresult);
-      cb(null);
-
-    }, function (err) {
-      if (err) {
-        callback(err);
       } else {
         var results =
         {
           "result": {
-            "message": "게시물 목록이 조회되었습니다.",
+            "message": "임대 게시물 목록이 조회되었습니다.",
             "page": page,
             "listperPage": limit,
-            "postData": postList
+            "postData": interiorList
           }
 
         };
         callback(null, results);
       }
-    });
-  }
+    })
+  };
 
-  async.waterfall([getConnection, selectPosts, selectPosts2, resultJSON], function (err, result) {
+
+  //  var furniture = "select f.fphoto_path as furniture_url, f.brand, f.name, f.no, f.size, f.color_id, f.link " +
+  //    "from furniture f join post p on(f.post_id = p.id) " +
+  //    "join color c on(f.color_id = c.id) " +
+  //    "where post_type= ? and p.id = ? ";
+  //
+  //  var reply = "select  r.username as username, r.reply_content, r.reply_time " +
+  //    "from reply r join post p on(r.post_id = p.id) " +
+  //    "where post_type= ? and p.id = ? ";
+  //
+  //  var index = 0;
+  //  async.eachSeries(results, function (element, cb1) {
+  //    async.series([function (cb2) {
+  //      connection.query(hashtag, [post_type, element.post_id], function (err, tag_results) {
+  //        if (err) {
+  //          cb2(err);
+  //        } else {
+  //          results[index].hash_tag = tag_results;
+  //          cb2(null);
+  //        }
+  //      });
+  //
+  //    }, function (cb2) {
+  //      connection.query(furniture, [post_type, element.post_id], function (err, furniture_results) {
+  //        if (err) {
+  //          cb2(err);
+  //        } else {
+  //          results[index].furnitures = furniture_results;
+  //          console.log(furniture_results);
+  //          cb2(null);
+  //        }
+  //      });
+  //    }, function (cb2) {
+  //      connection.query(reply, [post_type, element.post_id], function (err, reply_results) {
+  //        if (err) {
+  //          cb2(err);
+  //        } else {
+  //          results[index].replies = reply_results;
+  //          cb2(null);
+  //        }
+  //      });
+  //    }], function (err) {
+  //      if (err) {
+  //        cb1(err);
+  //      } else {
+  //        index++;
+  //        console.log(index);
+  //        cb1(null);
+  //      }
+  //    });
+  //  }, function (err) {
+  //    connection.release();
+  //    if (err) {
+  //      callback(err);
+  //    } else {
+  //
+  //      callback(null, results);
+  //    }
+  //  });
+  //}
+  //
+  //function resultJSON(results, callback) {
+  //  var postList = [];
+  //
+  //
+  //  async.eachSeries(results, function (results, cb) {
+  //    var postresult = {
+  //
+  //      "post_id": results.id,
+  //      "username": results.username,
+  //      "photo_url": results.photo_path,
+  //      "file_url": results.file_path,
+  //      "scrap_count": "확인",
+  //      "hash_tag": results.tag,
+  //      "category": results.category,
+  //      "content": results.content,
+  //      "furnitures": results.furnitures,
+  //      "reply": results.replies
+  //
+  //
+  //    };
+  //    postList.push(postresult);
+  //    cb(null);
+  //
+  //  }, function (err) {
+  //    if (err) {
+  //      callback(err);
+  //    } else {
+  //      var results =
+  //      {
+  //        "result": {
+  //          "message": "게시물 목록이 조회되었습니다.",
+  //          "page": page,
+  //          "listperPage": limit,
+  //          "postData": postList
+  //        }
+  //
+  //      };
+  //      callback(null, results);
+  //    }
+  //  });
+  //}
+
+  async.waterfall([getConnection, selectPosts, resultJSON], function (err, result) {
     if (err) {
       var err = {
         "code": "E00003",
