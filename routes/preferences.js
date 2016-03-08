@@ -16,34 +16,55 @@ router.get('/', function (req, res, next) {
     }
 
     function selectQuestion (connection, callback) {
-        var sql = "SELECT q.question as question, i.questionary_id as qid, i.item_seq as iseq, i.item as item "+
-                  "FROM bangdb.questionary q JOIN bangdb.item i "+
-                  "ON (q.id = i.questionary_id)";
+        var sql = "SELECT id, question "+
+                  "FROM bangdb.questionary";
         connection.query(sql, [], function(err, questions) {
-            connection.release();
             if (err) {
                 callback(err);
             } else {
-                callback(null, questions);
+                callback(null, questions, connection);
             }
         })
     }
 
-    function resultJSON (questions, callback) {
+    function resultJSON (questions, connection, callback) {
         var preferList = [];
-        var index =0;
-        async.each(questions, function(item, callback) {
-            var result = {
-                "questionary_id": questions[index]["qid"],
-                "questionary": questions[index]["question"],
-                "item_seq": questions[index]["iseq"],
-                "item": questions[index]["item"]
-            };
-            index++;
-            preferList.push(result);
-            callback(null);
+        async.each(questions, function(question, cb1) {
+            var sql = "SELECT i.item_seq as iseq, i.item as item "+
+                    "FROM bangdb.questionary q JOIN bangdb.item i "+
+                    "ON (q.id = i.questionary_id) " +
+                    "WHERE q.id =?";
+            connection.query(sql, [question.id], function (err, item) {
+                if (err) {
+                    cb1(err);
+                } else {
+                    console.log('===질문 id=== :' + question.id);
+                    var itemList = [];
+                    async.each(item, function (item, cb2) {
+                        var items = {
+                            "seq": item.iseq,
+                            "item": item.item
+                        };
+                        itemList.push(items);
+                        cb2(null);
+                    }, function (err) {
+                        if (err) {
+                            cb1(err);
+                        } else {
+                            var result = {
+                                "questionary_id": question.qid,
+                                "questionary": question.question,
+                                "item": itemList
+                            };
+                            preferList.push(result);
+                            cb1(null);
+                        }
+                    });
+                }
+            });  // query
 
         }, function(err){
+            connection.release();
             if (err) {
                 callback(err);
             } else {
