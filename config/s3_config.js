@@ -5,8 +5,7 @@ var s3 = {
     "bucket" :"bangpjt",
     "imageACL": "public-read",
     "mypages": {"imageDir": "mypages"},
-    "posts": {"imageDir": "posts"},
-    "furniture": {"imageDir": "furniture"}
+    "posts": {"imageDir": "posts"}
 };
 
 module.exports = s3;
