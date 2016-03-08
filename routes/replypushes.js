@@ -1,5 +1,7 @@
 var express = require('express');
 var gcm = require('node-gcm');
+var async = require('async');
+var passport = require('passport');
 var router = express.Router();
 
 
@@ -17,10 +19,13 @@ function isLoggedIn(req, res, next) {
 // 댓글 알림
 router.post('/', isLoggedIn, function (req, res, next) {
 
-    var user = req.user;
+    var reqPost = req.form.key;
 
-    function getConnection (connection, callback) {
-        pool.getConnection(function (err, callback) {
+    console.log('=== req.form.key :'+ req.form.key);
+    console.log('=== req.form.key.post_id :'+ req.form.key.post_id);
+
+    function getConnection(connection, callback) {
+        pool.getConnection(function (err, connection) {
             if (err) {
                 callback(err);
             } else {
@@ -29,47 +34,55 @@ router.post('/', isLoggedIn, function (req, res, next) {
         })
     }
 
+    function selectKey(connection, callback) {
+        var sql = "SELECT registration_token "+
+                  "FROM bangdb.post p LEFT JOIN  bangdb.user u ON (p.user_id = u.id) "+
+                  "WHERE p.id = ?";
+        connection.query(sql, [reqPost], function (err, key) {
+            if (err) {
+                callback(err);
+            } else {
+                callback(null, key);
+            }
+        });
+    }
 
-
-    if ("내 게시글에 댓글 달렸을때") {
+    function sendPush(key, callback) {
+        console.log('===> registration_token :' + key[0].registration_token);
         var message = new gcm.Message({
             collapseKey: 'demo',
             delayWhileIdle: true,
             timeToLive: 3,
             data: {
-                lecture_id:"notice",
-                title:"댓글알림",
-                desc: "해당 게시글에 댓글이 등록되었습니다"
+                lecture_id: "notice",
+                title: "댓글알림",
+                desc: "게시글에 댓글이 등록되었습니다"
             }
         });
 
-        var server_access_key = "안드로이드 개발자가 넘겨준 서버키";
+        var server_access_key = "안드로이드에서 받아오기";
         var sender = new gcm.Sender(server_access_key);
         var registrationIds = [];
-        var registration_id = "안드로이드 registration_id 값";
+        var registration_id = key[0].registration_token;
         registrationIds.push(registration_id);
 
-        // Send to a topic, with no retry this time
-        sender.sendNoRetry(message, { topic: '/topics/global' }, function (err, response) {
-            if(err) {
-                console.error(err);
-            } else {
-                console.log(response);
-            }
-        });
-
         sender.send(message, registrationIds, 4, function (err, response) {
-            if(err) {
+            if (err) {
                 console.error(err);
             } else {
                 console.log(response);
             }
         });
-    } else {
-
+        callback(result);
     }
 
-
+    async.waterfall([getConnection, selectKey, sendPush], function (err, result) {
+        if (err) {
+            next(err);
+        } else {
+            res.json({"message": "댓글 푸시 알람이 전송되었습니다"});
+        }
+    })
 
 });
 
