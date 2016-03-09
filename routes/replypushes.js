@@ -19,6 +19,9 @@ function isLoggedIn(req, res, next) {
 // 댓글 알림
 router.post('/', isLoggedIn, function (req, res, next) {
 
+    //var key = req.body.key;
+    //var data = req.body.data;
+
     var reqPost = req.form.key;
 
     console.log('=== req.form.key :'+ req.form.key);

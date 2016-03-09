@@ -10,7 +10,6 @@ var router = express.Router();
 // 회원가입
 router.post('/', function (req, res, next) {
     if (req.secure) {
-
         var username = req.body.username;
         var email = req.body.email;
         var password = req.body.password;
@@ -83,7 +82,7 @@ router.post('/', function (req, res, next) {
             if (err) {
                 next(err);
             } else {
-                result.message = "회원가입이 완료되었습니다."
+                result.message = "회원가입이 완료되었습니다.";
                 res.json({
                     "result": result
                 });
@@ -136,6 +135,7 @@ router.post('/login', function (req, res, next) {
 //로그인(페이스북)
 router.post('/facebook/token', function (req, res, next) {
     if (req.secure) {
+        console.log('dddddd');
         passport.authenticate('facebook-token', function (err, user, info) {
             if (err) {
                 next(err);
@@ -151,7 +151,7 @@ router.post('/facebook/token', function (req, res, next) {
                     }
                 })
             }
-        })
+        })(req, res, next);
     } else {
         var err = new Error('SSL/TLS Upgrade Required');
         err.status = 426;

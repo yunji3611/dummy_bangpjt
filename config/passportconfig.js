@@ -97,13 +97,16 @@ module.exports = function (passport) {
                 done(null, user);
             }
         });
-    }))
+    }));
 
     passport.use('facebook-token', new FacebookTokenStrategy({
         "clientID": authConfig.facebook.appId,
         "clientSecret": authConfig.facebook.appSecret,
-        "profileFields": ["id", "displayName", "email"]
-    }, function (accessToken, refreshToken, profile, done) {
+        "profileFields": ["id", "displayName", "email"],
+        "passReqToCallback": true
+    }, function (req, accessToken, refreshToken, profile, done) {
+        console.log(accessToken);
+        console.log('passport왔당');
         function getConnection(callback) {
             pool.getConnection(function (err, connection) {
                if (err) {
@@ -123,21 +126,21 @@ module.exports = function (passport) {
                     connection.release();
                     callback(err);
                 } else {
-                    if (members[0].length === 0) {
-                        var insert = "INSERT INTO bangdb.user (facebook_id, facebook_username, facebook_token, facebook_email, facebook_name) " +
-                                     "VALUES (?, ?, ?, ?, ?) ";
-                        connection.query(insert, [profile.id, profile.username, accessToken, profile.emails[0],
+                    if (members.length === 0) {
+                        var insert = "INSERT INTO bangdb.user (facebook_id, facebook_token, facebook_email, facebook_name) " +
+                                     "VALUES (?, ?, ?, ?) ";
+                        connection.query(insert, [profile.id, accessToken, profile.emails[0].value,
                                                    profile.displayName], function (err, member) {
                             if (err) {
+                                connection.release();
                                 callback(err);
                             } else {
                                 connection.release();
                                 var user = {
                                     "id": member.insertId,
                                     "facebookId": profile.id,
-                                    "facebookUsername": profile.username,
                                     "facebookEmail": profile.emails[0],
-                                    "facebookName": profile.name
+                                    "facebookName": profile.displayName
                                 };
                                 callback(null, user);
                             }
@@ -185,7 +188,6 @@ module.exports = function (passport) {
                 done(null, user);
             }
         });
-
     }))
 
 

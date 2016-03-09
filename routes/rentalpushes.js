@@ -15,40 +15,64 @@ function isLoggedIn(req, res, next) {
 // 임대 알림
 router.post('/', isLoggedIn, function (req, res, next) {
 
-    var message = new gcm.Message({
-        collapseKey: 'demo',
-        delayWhileIdle: true,
-        timeToLive: 3,
-        data: {
-            lecture_id:"notice",
-            title:"임대기간알림",
-            desc: "임대기간이 일주일 남았습니다"
-        }
-    });
 
-    var server_access_key = "안드로이드 개발자가 넘겨준 서버키";
-    var sender = new gcm.Sender(server_access_key);
-    var registrationIds = [];
-    var registration_id = "안드로이드 registration_id 값";
-    registrationIds.push(registration_id);
+    function getConnection(connection, callback) {
+        pool.getConnection(function (err, connection) {
+            if (err) {
+                callback(err);
+            } else {
+                callback(null, connection);
+            }
+        })
+    }
 
-// Send to a topic, with no retry this time
-    sender.sendNoRetry(message, { topic: '/topics/global' }, function (err, response) {
-        if(err) {
-            console.error(err);
+    function selectKey(connection, callback) {
+        var sql = "";
+        connection.query(sql, [], function (err, key) {
+            if (err) {
+                callback(err);
+            } else {
+                callback(null, key);
+            }
+        });
+    }
+
+    function sendPush(key, callback) {
+        console.log('===> registration_token :' + key[0].registration_token);
+        var message = new gcm.Message({
+            collapseKey: 'demo',
+            delayWhileIdle: true,
+            timeToLive: 3,
+            data: {
+                lecture_id: "notice",
+                title: "임대 기간 알림",
+                desc: "임대기간이 일주일 남았습니다"
+            }
+        });
+
+        var server_access_key = "안드로이드에서 받아오기";
+        var sender = new gcm.Sender(server_access_key);
+        var registrationIds = [];
+        var registration_id = key[0].registration_token;
+        registrationIds.push(registration_id);
+
+        sender.send(message, registrationIds, 4, function (err, response) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(response);
+            }
+        });
+        callback(result);
+    }
+
+    async.waterfall([getConnection, selectKey, sendPush], function (err, result) {
+        if (err) {
+            next(err);
         } else {
-            console.log(response);
+            res.json({"message": "임대 푸시 알람이 전송되었습니다"});
         }
-    });
-
-    sender.send(message, registrationIds, 4, function (err, response) {
-        if(err) {
-            console.error(err);
-        } else {
-            console.log(response);
-        }
-    });
-
+    })
 
 });
 
