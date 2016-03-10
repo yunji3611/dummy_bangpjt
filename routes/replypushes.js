@@ -5,25 +5,11 @@ var passport = require('passport');
 var router = express.Router();
 
 
-function isLoggedIn(req, res, next) {
-    if (!req.isAuthenticated()) {
-        var err = new Error('로그인이 필요합니다');
-        err.status = 401;
-        next(err);
-    } else {
-        next();
-    }
-}
-
 
 // 댓글 알림
 router.get('/:pid', function (req, res, next) {
 
-    //var key = req.body.key;
-    //var data = req.body.data;
-
     var reqPost = req.params.pid;
-    //var reqPost = req.form.key;
 
     console.log('=== req.form.key :'+ req.params.pid);
 
@@ -52,14 +38,18 @@ router.get('/:pid', function (req, res, next) {
 
     function sendPush(key, callback) {
         console.log('===> registration_token :' + key[0].registration_token);
+
         var message = new gcm.Message({
             collapseKey: 'demo',
             delayWhileIdle: true,
             timeToLive: 3,
             data: {
-                lecture_id: "notice",
-                title: "댓글알림",
-                desc: "게시글에 댓글이 등록되었습니다"
+                "key": "massage"
+            },
+            notification: {
+                "title": "댓글알림",
+                "body": "게시글에 댓글이 등록되었습니다.",
+                "icon": "ic_launcher"
             }
         });
 
@@ -69,7 +59,7 @@ router.get('/:pid', function (req, res, next) {
         var registration_id = key[0].registration_token;
         registrationIds.push(registration_id);
 
-        sender.send(message, registrationIds, 4, function (err, response) {
+        sender.send(message, registrationIds, function (err, response) {
             if (err) {
                 console.error(err);
                 callback(err);
