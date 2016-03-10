@@ -17,17 +17,17 @@ function isLoggedIn(req, res, next) {
 
 
 // 댓글 알림
-router.post('/', isLoggedIn, function (req, res, next) {
+router.get('/:pid', function (req, res, next) {
 
     //var key = req.body.key;
     //var data = req.body.data;
 
-    var reqPost = req.form.key;
+    var reqPost = req.params.pid;
+    //var reqPost = req.form.key;
 
-    console.log('=== req.form.key :'+ req.form.key);
-    console.log('=== req.form.key.post_id :'+ req.form.key.post_id);
+    console.log('=== req.form.key :'+ req.params.pid);
 
-    function getConnection(connection, callback) {
+    function getConnection(callback) {
         pool.getConnection(function (err, connection) {
             if (err) {
                 callback(err);
@@ -63,7 +63,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
             }
         });
 
-        var server_access_key = "안드로이드에서 받아오기";
+        var server_access_key = "AIzaSyCTqs_tFwUjY-HUEj_tM01nH7Yfg4uBlVE";
         var sender = new gcm.Sender(server_access_key);
         var registrationIds = [];
         var registration_id = key[0].registration_token;
@@ -72,14 +72,15 @@ router.post('/', isLoggedIn, function (req, res, next) {
         sender.send(message, registrationIds, 4, function (err, response) {
             if (err) {
                 console.error(err);
+                callback(err);
             } else {
                 console.log(response);
+                callback(null);
             }
         });
-        callback(result);
     }
 
-    async.waterfall([getConnection, selectKey, sendPush], function (err, result) {
+    async.waterfall([getConnection, selectKey, sendPush], function (err) {
         if (err) {
             next(err);
         } else {
