@@ -2,8 +2,8 @@ var express = require('express');
 var async = require('async');
 var router = express.Router();
 
-function isLoggedIn(req, res, next){
-    if(!req.isAuthenticated()) {
+function isLoggedIn(req, res, next) {
+    if (!req.isAuthenticated()) {
         var err = new Error("로그인이 필요합니다");
         err.status = 401;
         next(err);
@@ -13,17 +13,18 @@ function isLoggedIn(req, res, next){
 }
 
 // 임대게시물 주문
-router.post ('/', isLoggedIn, function (req, res, next) {
+router.post('/', isLoggedIn, function (req, res, next) {
     if (req.secure) {
         var user = req.user;
         var postId = req.body.post_id;
+        var period = req.body.post_id;
         var address = req.body.address;
         var phone = req.body.phone;
         var paymethod = req.body.paymethod;
         var monthPrice = req.body.month_price;
 
-        function getConnection (callback) {
-            pool.getConnection(function(err, connection) {
+        function getConnection(callback) {
+            pool.getConnection(function (err, connection) {
                 if (err) {
                     callback(err);
                 } else {
@@ -32,11 +33,11 @@ router.post ('/', isLoggedIn, function (req, res, next) {
             })
         }
 
-        function selectOrder (connection, callback) {
-            var sql = "SELECT post_id "+
-                      "FROM bangdb.orders "+
-                      "WHERE user_id=? and post_id=? ";
-            connection.query(sql, [user.id, postId], function(err, orders) {
+        function selectOrder(connection, callback) {
+            var sql = "SELECT post_id " +
+                "FROM bangdb.orders " +
+                "WHERE user_id=? and post_id=? ";
+            connection.query(sql, [user.id, postId], function (err, orders) {
                 if (orders.length) {
                     var err = new Error("이미 주문된 소품입니다");
                     err.status = 401;
@@ -47,23 +48,27 @@ router.post ('/', isLoggedIn, function (req, res, next) {
             })
         }
 
-        function insertOrder (connection, callback) {
-            var sql = "INSERT INTO bangdb.orders(user_id, post_id, rental_starttime, rental_endtime, address, phone, paymethod, month_price) "+
-                      "VALUES (?, ?, DATE_ADD(utc_timestamp(), INTERVAL 1 week), DATE_ADD(utc_timestamp(), INTERVAL 6 month), ?, ?, ?, ?)";
-            connection.query(sql, [user.id, postId,address, phone, paymethod, monthPrice], function (err, orderdetail) {
+        function insertOrder(connection, callback) {
+            var sql = "INSERT INTO bangdb.orders(user_id, post_id, rental_starttime, rental_endtime, address, phone, paymethod, month_price) " +
+                      "VALUES (?, ?, DATE_ADD(utc_timestamp(), INTERVAL 1 week), DATE_ADD(utc_timestamp(), INTERVAL ? month), ?, ?, ?, ?)";
+            connection.query(sql, [user.id, postId, period, address, phone, paymethod, monthPrice], function (err, orderdetail) {
                 if (err) {
                     callback(err);
                 } else {
-                    callback(null, orderdetail);
+                    callback(null, orderdetail.insertId);
                 }
             })
         }
 
-        async.waterfall([getConnection, selectOrder, insertOrder], function (err, orderdetail) {
+        async.waterfall([getConnection, selectOrder, insertOrder], function (err, orderId) {
             if (err) {
                 next(err);
             } else {
-                res.json({"result":{"message":"임대되었습니다"}});
+                request.get({url: 'http://localhost/rentalpushes/'+ orderId}, function (err, httpResponse, body) {
+                    console.log(body);
+                    res.json({"result": {"message": "임대되었습니다"}});
+                });
+                // res.json({"result":{"message":"임대되었습니다"}});
             }
         })
 
