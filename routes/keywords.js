@@ -33,8 +33,11 @@ router.get('/', function(req, res, next) {
             callback(err);
           } else {
             var results = {
-              "message" : "해당검색어에 대한 결과",
-              "words" : word };
+              "result" :{
+                "message" : "해당검색어에 대한 결과",
+                "words" : word }
+              }
+
             console.log('단어' +words);
             callback(null, results);
           }

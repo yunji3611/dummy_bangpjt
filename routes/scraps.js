@@ -49,6 +49,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
                 callback(err);
             } else {
                 callback(null, connection, scraps);
+
             }
         });
     }
@@ -72,6 +73,8 @@ router.get('/', isLoggedIn, function (req, res, next) {
                             "tag": tags.tag
                         };
                         tagList.push(tag);
+
+
                         cb2(null);
                     }, function (err) {
                         if (err) {

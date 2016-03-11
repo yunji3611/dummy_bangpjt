@@ -26,7 +26,7 @@ router.get('/', function (req, res, next) {
   if (tag != null) {
 
     function selectPosts(connection, callback) {
-      var post1 = "SELECT p.id, f.file_path, u.username, u.photo_path, h.tag, count(s.post_id) as scrap " +
+      var post1 = "SELECT p.id, f.file_path, u.username, u.photo_path, h.tag, count(s.post_id) as scrap, p.category, p.content " +
         "FROM post p LEFT JOIN file f ON(f.post_id = p.id) " +
         "LEFT JOIN scrap s ON(s.post_id = p.id) " +
         "LEFT JOIN user u ON(u.id = p.user_id) " +
@@ -48,7 +48,7 @@ router.get('/', function (req, res, next) {
 
 
     function selectTags(connection, posts, callback) {
-      var postList = [];
+      var postlist = [];
       async.each(posts, function (item, cb) {
         var hashtag = "SELECT h.tag " +
           "FROM hashtag_has_post hp LEFT JOIN hashtag h ON (h.id = hp.hashtag_id) " +
@@ -69,14 +69,19 @@ router.get('/', function (req, res, next) {
                 cb(err);
               } else {
                 var postresult = {
-                  "post_id": item.id,
-                  "file_url": item.file_path,
-                  "scrap_count": item.scrap,
-                  "hash_tag": tagList,
-                  "category": item.category
+
+                    "post_id": item.id,
+                    "username" :item.username,
+                    "photo_url" :item.photo_path,
+                    "file_url": item.file_path,
+                    "scrap_count": item.scrap,
+                    "hash_tag": tagList,
+                    "category": item.category,
+                    "content": item.content
+
                 };
-                postList.push(postresult);
-                cb(null);
+                postlist.push(postresult);
+                cb(null, postlist);
               }
             });
           }
@@ -87,13 +92,14 @@ router.get('/', function (req, res, next) {
         if (err) {
           callback(err);
         } else {
+          var postList = postlist;
           var results =
           {
             "result": {
               "message": "해당 검색어에대한 게시물이 조회되었습니다.",
               "page": page,
               "listperPage": limit,
-              "postData": postList
+              "postData":{"postList":postList}
             }
           };
           callback(null, results);

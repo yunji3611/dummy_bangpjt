@@ -95,7 +95,7 @@ router.get('/', function (req, res, next) {
               "message": "임대 게시물 목록이 조회되었습니다.",
               "page": page,
               "listperPage": limit,
-              "postData": interiorList
+              "postData": {"interiorList":interiorList}
             }
           };
           callback(null, results);
@@ -184,7 +184,7 @@ router.get('/', function (req, res, next) {
               "message": "커뮤니티 게시물 목록이 조회되었습니다.",
               "page": page,
               "listperPage": limit,
-              "postData": communityList
+              "postData": {"communityList":communityList}
             }
           };
           callback(null, results);
@@ -389,32 +389,6 @@ router.get('/:post_id', function (req, res, next) {
       })
     }
 
-    //function selectReply(i_details, connection, callback) {
-    //  var replysql = "SELECT r.username as username, r.reply_content, r.reply_time " +
-    //    "FROM reply r LEFT JOIN post p on(r.post_id = p.id) " +
-    //    "WHERE p.id = ? ";
-    //
-    //  connection.query(replysql, [pid], function (err, replies) {
-    //    if (err) {
-    //      callback(err);
-    //    } else {
-    //      async.each(replies, function(item2, cb2) {
-    //        var reply = {"username" : item2.username,
-    //          "reply_content" : item2.reply_content,
-    //          "reply_time" : item2.reply_time};
-    //        replyList.push(reply);
-    //        cb2(null);
-    //      }, function(err) {
-    //        if (err) {
-    //          callback(err);
-    //        } else {
-    //
-    //          callback(null, i_details, connection);
-    //        }
-    //      });
-    //    }
-    //  });
-    //}
 
     function selectFurniture(i_details, connection, callback) {
       var furnituresql = "SELECT f.fphoto_path, f.brand, f.name, f.no, f.size, f.color_id, f.link, f.price " +
@@ -465,15 +439,15 @@ router.get('/:post_id', function (req, res, next) {
           "result": {
             "message": "임대 게시물 상세페이지입니다",
             "detailData": {
-              "post_id": results.id,
-              "file_url": results.file_path,
-              "scrap_count": results.scrap,
-              "package" : results.package,
-              "month_price": results.month_price,
+              "post_id": results[0].id,
+              "file_url": results[0].file_path,
+              "scrap_count": results[0].scrap,
+              "package" : results[0].package,
+              "month_price": results[0].month_price,
               "hash_tag": tagList,
               //"reply": replyList,
               "furnitures" :furnitureList,
-              "content": results.content
+
             }
           }
         });
@@ -498,7 +472,7 @@ function isLoggedIn(req, res, next) {
 }
 
 
-//게시물 등록
+//게시물 등록 -검토완료
 router.post('/', isLoggedIn, function (req, res, next) {
 
 
@@ -766,7 +740,7 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
   });   // form.parse
 });
 
-//게시물 삭제
+//게시물 삭제 -트랜잭션완료
 
 router.delete('/:post_id',isLoggedIn, function (req, res, next) {
   var user = req.user;
@@ -794,90 +768,151 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
       });
     }
     function compareUser(connection, callback) {
-      var sql = "";
-      connection.query()
+      var sql = "SELECT user_id FROM post "+
+      "WHERE id = ?";
+      connection.query(sql, [postId] , function(err, results) {
+        if (err) {
+          console.log('왜안대');
+          callback(err);
+        } else {
+            if (results[0].user_id !== user.id) {
+              console.log('삭제' + results[0].user_id);
+              var err = new Error('게시물을 삭제 할 수 없습니다.');
+              callback(err);
+            } else {
+              callback(null, connection);
+            }
+
+        }
+      })
 
     }
-    function deleteReply(connection, callback) {
-      var sql = "DELETE FROM reply "+
-                "WHERE post_id = ? ";
-      connection.query(sql, [postId], function (err, result) {
+
+    function deleteTotal(connection, callback) {
+      connection.beginTransaction(function (err) {
         if (err) {
           connection.release();
           callback(err);
+
         } else {
-          callback(null, connection);
-        }
-      })
-
-    }
-
-    function deletePhoto(connection, callback) {
-      var sql = "SELECT p.id, file_path, file_name, original_name " +
-        "FROM post p LEFT JOIN file fi on(p.id = fi.post_id) " +
-        "WHERE p.user_id = ? and p.id=?";
-      connection.query(sql, [user.id, postId], function (err, photo_exit) {
-        if (err) {
-          callback(err);
-        } else {
-          console.log("게시물아이디" +postId);
-          console.log("사용자아이디" +user.id);
-          //console.log('====photo_exit[0].file_name :' + photo_exit[0].file_name);
-          if (photo_exit.length === 0) {  // 파일이 없을 때
-            console.log('사진이 존재하지 않습니다');
-            callback(null, connection);
-          } else {   // 파일이 들어 있을 때
-            console.log('사진이 존재해서 이제 삭제할꺼예요');
-            var s3 = new AWS.S3({
-              "accessKeyId": s3Config.key,
-              "secretAccessKey": s3Config.secret,
-              "region": s3Config.region,
-              "params": {
-                "Bucket": s3Config.bucket,
-                "Key": s3Config.posts.imageDir + "/" + photo_exit[0].file_name,
-                "ACL": s3Config.imageACL,
-                "ContentType": mimeType
-              }
-            });
-            s3.deleteObject(s3.params, function (err, data) {
-              if (err) {
-                connection.release();
-                console.log(err, err.stack)
-              } else {
-                console.log(data);
-                // db에서 삭제
-                var deletesql = "DELETE FROM bangdb.file "+
-                  "WHERE post_id=?";
-                connection.query(deletesql, [postId], function (err, deleteResult) {
-                  if (err) {
-                    callback(err);
-                  } else {
-                    callback(null, connection)
-
-                  }
-                });
-              }
-            })
+          function deleteReply(callback) {
+            if (err) {
+              console.log('댓글삭제실패');
+              connection.release();
+              callback(err);
+            }else {
+              var sql = "DELETE FROM reply "+
+                "WHERE post_id = ? ";
+              connection.query(sql, [postId], function (err, result) {
+                if (err) {
+                  console.log('댓글삭제2');
+                  connection.release();
+                  callback(err);
+                } else {
+                  console.log('댓글삭제');
+                  callback(null, result);
+                }
+              });
+            }
           }
-        }
-      })
-    } // deletePhoto
 
-    function deletePost(connection, callback) {
-      var sql ="DELETE from post " +
+          function deletePhoto(callback) {
+            if (err) {
+              console.log('포토삭제실패');
+              connection.release();
+              callback(err);
+            } else {
+              var sql = "SELECT p.id, file_path, file_name, original_name " +
+                "FROM post p LEFT JOIN file fi on(p.id = fi.post_id) " +
+                "WHERE p.user_id = ? and p.id=?";
+              connection.query(sql, [user.id, postId], function (err, photo_exit) {
+                if (err) {
+                  connection.rollback();
+                  connection.release();
+                  callback(err);
+                } else {
+                  console.log("게시물아이디" +postId);
+                  console.log("사용자아이디" +user.id);
+                  //console.log('====photo_exit[0].file_name :' + photo_exit[0].file_name);
+                  if (photo_exit.length === 0) {  // 파일이 없을 때
+                    console.log('사진이 존재하지 않습니다');
+                    callback(null, connection);
+                  } else {   // 파일이 들어 있을 때
+                    console.log('사진이 존재해서 이제 삭제할꺼예요');
+                    var s3 = new AWS.S3({
+                      "accessKeyId": s3Config.key,
+                      "secretAccessKey": s3Config.secret,
+                      "region": s3Config.region,
+                      "params": {
+                        "Bucket": s3Config.bucket,
+                        "Key": s3Config.posts.imageDir + "/" + photo_exit[0].file_name,
+                        "ACL": s3Config.imageACL,
+                        "ContentType": mimeType
+                      }
+                    });
+                    s3.deleteObject(s3.params, function (err, data) {
+                      if (err) {
+                        connection.release();
+                        console.log(err, err.stack)
+                      } else {
+                        console.log(data);
+                        // db에서 삭제
+                        var deletesql = "DELETE FROM bangdb.file "+
+                          "WHERE post_id=?";
+                        connection.query(deletesql, [postId], function (err, deleteResult) {
+                          if (err) {
+                            callback(err);
+                          } else {
+                            callback(null);
+
+                          }
+                        });
+                      }
+                    })
+                  }
+                }
+              });
+            }
+
+
+          } // deletePhoto
+
+          function deletePost(callback) {
+            if (err) {
+              connection.release();
+              callback(err);
+            } else {
+              var sql ="DELETE from post " +
                 "WHERE id = ? ";
-      connection.query(sql, [postId], function (err, result) {
-        connection.release();
-        if (err) {
-          callback(err);
-        } else {
-          callback(null);
-        }
-      })
+              connection.query(sql, [postId], function (err, result) {
 
+                if (err) {
+                  connection.rollback();
+                  connection.release();
+                  callback(err);
+                } else {
+                  connection.commit();
+                  connection.release();
+                  callback(null);
+                }
+              });
+            }
+          }
+
+          async.series([deleteReply, deletePhoto, deletePost], function (err, result) {
+            if (err) {
+              callback(err);
+            } else {
+              callback(null, result);
+            }
+          });
+        }
+      });
     }
 
-    async.waterfall([getConnection, deleteReply, deletePhoto, deletePost], function (err, result) {
+
+//, deleteReply, deletePhoto, deletePost
+    async.waterfall([getConnection, compareUser, deleteTotal], function (err, result) {
       if (err) {
         var err = {
           "code": "E00006",
@@ -973,7 +1008,7 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
 //
 //});
 
-//댓글 등록
+//댓글 등록 -완료
 router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
 
   var user = req.user;
@@ -1030,7 +1065,7 @@ router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
 
 });
 
-//댓글 삭제
+//댓글 삭제 -검토완료
 router.delete('/:post_id/replies/:reply_id', isLoggedIn, function (req, res, next) {
 
   var user = req.user;
@@ -1056,13 +1091,14 @@ router.delete('/:post_id/replies/:reply_id', isLoggedIn, function (req, res, nex
       "from reply r join (select id, username " +
       "from user) u " +
       "on (u.username = r.username) " +
-      "where u.id=? and r.id=? and post_id=?";
-    connection.query(sql, [user.id, rid, pid], function (err, results) {
+      "where r.id=? and post_id=?";
+    connection.query(sql, [rid, pid], function (err, results) {
       if (err) {
         connection.release();
         callback(err);
       } else {
-        if (results.userid !== user.id) {
+        if (results[0].userid !== user.id) {
+          console.log('확인' + results[0].userid);
           var err = new Error('댓글을 삭제할 수 없습니다.');
           callback(err);
         } else {
