@@ -3,6 +3,7 @@ var bcrypt = require('bcrypt');
 var async = require('async');
 var authConfig = require('./authconfig');
 var FacebookTokenStrategy = require('passport-facebook-token');
+var hexkey =  process.env.HEX_KEY;
 
 module.exports = function (passport) {
 
@@ -55,10 +56,10 @@ module.exports = function (passport) {
         }
 
         function selectUser(connection, callback) {
-            var sql = "SELECT id, email, password, registration_token " +
-                      "FROM bangdb.user " +
-                      "WHERE email = ?";
-            connection.query(sql, [username], function (err, members) {
+            var sql = "SELECT convert(aes_decrypt(email, unhex(" + connection.escape(hexkey) + ")) using utf8) as email, password, registration_token, id "+
+                "FROM bangdb.user "+
+                "WHERE email = aes_encrypt(" + connection.escape(username) + ", unhex(" + connection.escape(hexkey) + ")); ";
+            connection.query(sql, function (err, members) {
                 // connection.release();
                 if (err) {
                     callback(err);
@@ -67,13 +68,13 @@ module.exports = function (passport) {
                         var err = new Error('사용자가 존재하지 않습니다');
                         callback(err);
                     } else {
-
                         var user = {
                             "id": members[0].id,
                             "email": members[0].email,
                             "hashPassword": members[0].password,
                             "registration_token": members[0].registration_token
                         };
+                        console.log("hashpassword===>"+ user.hashPassword);
                         callback(null, user, connection);
                     }
                 }
@@ -81,11 +82,12 @@ module.exports = function (passport) {
         }
 
         function compareUserInput(user, connection, callback) {
-            bcrypt.compare(password, user.hashPassword, function (err, member) {
+            bcrypt.compare(password, user.hashPassword, function (err, result) {
                 if (err) {
                     callback(err);
                 } else {
-                    if (member) {
+                    console.log("result===>"+ result);
+                    if (result === true) {
                         callback(null, user, connection);
                     } else {
                         callback(null, false);
@@ -95,6 +97,7 @@ module.exports = function (passport) {
         }
 
         function tokenUpdate(user, connection, callback) {
+
             var sql = "UPDATE bangdb.user "+
                       "SET registration_token =? "+
                       "WHERE id=? ";
@@ -106,8 +109,6 @@ module.exports = function (passport) {
                 }
             })
         }
-
-
 
         async.waterfall([getConnection, selectUser, compareUserInput, tokenUpdate], function (err, user) {
             if (err) {
