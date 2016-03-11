@@ -34,14 +34,14 @@ router.get('/', function (req, res, next) {
   function resultJSON(results, callback) {
     async.eachSeries(results, function (item, cb) {
       var mainresult = {
-        "mainList": {
+
           "post_id": item.id,
           "file_url": item.file_path,
           "scrap_count": item.scrap,
           "post_count": item.count,
           "category": item.category,
           "content": item.content
-        }
+
       };
       mainList.push(mainresult);
       cb(null);
@@ -54,7 +54,7 @@ router.get('/', function (req, res, next) {
         {
           "result": {
             "message": "메인페이지가 조회되었습니다.",
-            "mainData": mainList
+            "mainData": {mainList:mainList}
           }
 
         };
