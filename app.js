@@ -23,6 +23,7 @@ var replypushes = require('./routes/replypushes');
 var scraps = require('./routes/scraps');
 var tags = require('./routes/tags');
 var mainpages = require('./routes/mainpages');
+var keywords = require('./routes/keywords');
 
 var app = express();
 app.set('env', 'development');
@@ -60,6 +61,7 @@ app.use('/replypushes', replypushes);
 app.use('/scraps', scraps);
 app.use('/tags', tags);
 app.use('/mainpages', mainpages);
+app.use('/keywords', keywords);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
