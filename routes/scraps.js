@@ -18,6 +18,10 @@ function isLoggedIn(req, res, next) {
 // 스크랩함 목록 조회
 router.get('/', isLoggedIn, function (req, res, next) {
     var user = req.user;
+    var page = parseInt(req.query.page);
+    page = isNaN(page) ? 1 : page;
+    var limit = 10;
+    var offset = (page - 1) * limit;
 
     function getConnection(callback) {
         pool.getConnection(function (err, connection) {
@@ -31,13 +35,14 @@ router.get('/', isLoggedIn, function (req, res, next) {
 
     function selectScrap(connection, callback) {
         var sql = "SELECT p.id as id, fi.file_path, u.photo_path " +
-            "FROM bangdb.scrap s LEFT JOIN bangdb.post p on (s.post_id = p.id) " +
-            "LEFT JOIN bangdb.file fi on(p.id = fi.post_id) " +
-            "LEFT JOIN bangdb.hashtag_has_post hp on(p.id = hp.post_id) " +
-            "LEFT JOIN bangdb.user u on (u.id = s.user_id) " +
-            "WHERE s.user_id = ? " +
-            "GROUP BY p.id";
-        connection.query(sql, [user.id], function (err, scraps) {
+                "FROM bangdb.scrap s LEFT JOIN bangdb.post p on (s.post_id = p.id) " +
+                "LEFT JOIN bangdb.file fi on(p.id = fi.post_id) " +
+                "LEFT JOIN bangdb.hashtag_has_post hp on(p.id = hp.post_id) " +
+                "LEFT JOIN bangdb.user u on (u.id = s.user_id) " +
+                "WHERE s.user_id = ? " +
+                "GROUP BY p.id " +
+                "LIMIT ? OFFSET ? ";
+        connection.query(sql, [user.id, limit, offset], function (err, scraps) {
             //connection.release();
             if (err) {
                 connection.release();

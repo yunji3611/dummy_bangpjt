@@ -34,14 +34,18 @@ router.get('/', isLoggedIn, function (req, res, next) {
         }
 
         function selectUser(connection, callback) {
-            var sql = "SELECT username, photo_path " +
-                "FROM bangdb.user " +
-                "WHERE id = ?";
-            connection.query(sql, [user.id], function (err, info) {
+            var sql = "SELECT username, photo_path, count(p.id) as pcount, a.scount as scount "+
+                        "FROM bangdb.user u LEFT JOIN  bangdb.post p ON (u.id = p.user_id) "+
+                        "LEFT JOIN (select count(scrap.id) as scount, user_id  "+
+                                   "from scrap  "+
+                                   "where user_id =?) a ON (u.id = a.user_id)  "+
+                        "WHERE u.id = ?";
+            connection.query(sql, [user.id, user.id], function (err, info) {
                 connection.release();
                 if (err) {
                     callback(err);
                 } else {
+
                     callback(null, info)
                 }
             })
@@ -50,7 +54,9 @@ router.get('/', isLoggedIn, function (req, res, next) {
         function resultJSON(info, callback) {
             var result = {
                 "username": info[0].username,
-                "photo_url": info[0].photo_path
+                "photo_url": info[0].photo_path,
+                "mypost_count": info[0].pcount,
+                "myscrap_count": info[0].scount
             };
             callback(null, result);
         }
@@ -183,9 +189,9 @@ router.put('/', isLoggedIn, function (req, res, next) {
                                 } else {
                                     callback(null, result);
                                 }
-                            })   // connection.query
+                            });   // connection.query
                         }
-                    })  //  .send
+                    });  //  .send
 
             } // upDatePhoto
 
