@@ -42,6 +42,8 @@ module.exports = function (passport) {
         passReqToCallback: true
     }, function (req, username, password, done) {  // usernameField, passwordField
 
+        var registration_token = req.body.token;
+
         function getConnection(callback) {
             pool.getConnection(function (err, connection) {
                 if (err) {
@@ -53,11 +55,11 @@ module.exports = function (passport) {
         }
 
         function selectUser(connection, callback) {
-            var sql = "SELECT id, email, password " +
+            var sql = "SELECT id, email, password, registration_token " +
                       "FROM bangdb.user " +
                       "WHERE email = ?";
             connection.query(sql, [username], function (err, members) {
-                connection.release();
+                // connection.release();
                 if (err) {
                     callback(err);
                 } else {
@@ -69,21 +71,22 @@ module.exports = function (passport) {
                         var user = {
                             "id": members[0].id,
                             "email": members[0].email,
-                            "hashPassword": members[0].password
+                            "hashPassword": members[0].password,
+                            "registration_token": members[0].registration_token
                         };
-                        callback(null, user);
+                        callback(null, user, connection);
                     }
                 }
             });
         }
 
-        function compareUserInput(user, callback) {
+        function compareUserInput(user, connection, callback) {
             bcrypt.compare(password, user.hashPassword, function (err, member) {
                 if (err) {
                     callback(err);
                 } else {
                     if (member) {
-                        callback(null, user);
+                        callback(null, user, connection);
                     } else {
                         callback(null, false);
                     }
@@ -91,7 +94,22 @@ module.exports = function (passport) {
             });
         }
 
-        async.waterfall([getConnection, selectUser, compareUserInput], function (err, user) {
+        function tokenUpdate(user, connection, callback) {
+            var sql = "UPDATE bangdb.user "+
+                      "SET registration_token =? "+
+                      "WHERE id=? ";
+            connection.query(sql, [registration_token, user.id], function (err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    callback(null, user);
+                }
+            })
+        }
+
+
+
+        async.waterfall([getConnection, selectUser, compareUserInput, tokenUpdate], function (err, user) {
             if (err) {
                 done(err);
             } else {
@@ -107,7 +125,9 @@ module.exports = function (passport) {
         "passReqToCallback": true
     }, function (req, accessToken, refreshToken, profile, done) {
         console.log(accessToken);
-        console.log('passport왔당');
+
+        var registration_token = req.body.token;
+
         function getConnection(callback) {
             pool.getConnection(function (err, connection) {
                if (err) {
@@ -119,7 +139,7 @@ module.exports = function (passport) {
         }
 
         function selectOrCreateUser (connection, callback) {
-            var sql = "SELECT id, facebook_id, facebook_email, facebook_name "+
+            var sql = "SELECT id, facebook_id, facebook_email, facebook_name, registration_token "+
                       "FROM bangdb.user "+
                       "WHERE facebook_id = ?";
             connection.query(sql, [profile.id], function (err, members) {
@@ -141,9 +161,10 @@ module.exports = function (passport) {
                                     "id": member.insertId,
                                     "facebookId": profile.id,
                                     "facebookEmail": profile.emails[0],
-                                    "facebookName": profile.displayName
+                                    "facebookName": profile.displayName,
+                                    "registration_token": member[0].registration_token
                                 };
-                                callback(null, user);
+                                callback(null, user, connection);
                             }
                         });
 
@@ -154,12 +175,13 @@ module.exports = function (passport) {
                                 "id": members[0].id,
                                 "facebookId": members[0].facebook_id,
                                 "facebookUsername": members[0].facebook_name,
-                                "facebookEmail": members[0].facebook_email
+                                "facebookEmail": members[0].facebook_email,
+                                "registration_token": member[0].registration_token
                             };
-                            callback(null, user);
+                            callback(null, user, connection);
                         } else {
                            var update ="UPDATE bangdb.user " +
-                                       "SET facebook_token = ? " +
+                                       "SET facebook_token = ?,  " +
                                        "WHERE facebook_id = ?";
                             connection.query(update, [accessToken, profile.id], function (err, member) {
                                 connection.release();
@@ -170,9 +192,10 @@ module.exports = function (passport) {
                                         "id": results[0].id,
                                         "facebookId": results[0].facebook_id,
                                         "facebookUsername": results[0].facebook_name,
-                                        "facebookEmail": results[0].facebook_email
+                                        "facebookEmail": results[0].facebook_email,
+                                        "registration_token": member[0].registration_token
                                     };
-                                    callback(null, user);
+                                    callback(null, user, connection);
                                 }
                             });
                         }
@@ -182,7 +205,20 @@ module.exports = function (passport) {
             })
         }
 
-        async.waterfall([getConnection, selectOrCreateUser], function (err, user) {
+        function tokenUpdate(user, connection, callback) {
+            var sql = "UPDATE bangdb.user "+
+                      "SET registration_token =? "+
+                      "WHERE id=? ";
+            connection.query(sql, [registration_token, user.id], function (err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    callback(null, user);
+                }
+            })
+        }
+
+        async.waterfall([getConnection, selectOrCreateUser, tokenUpdate], function (err, user) {
             if (err) {
                 done(err);
             } else {
