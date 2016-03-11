@@ -2,7 +2,7 @@ var express = require('express');
 var bcrypt = require('bcrypt');
 var async = require('async');
 var passport = require('passport');
-
+var hexkey =  process.env.HEX_KEY;
 
 var router = express.Router();
 
@@ -26,10 +26,11 @@ router.post('/', function (req, res, next) {
         }
 
         function selectMember(connection, callback) {
+            console.log('selectmember=========' + hexkey);
             var sql = "SELECT email "+
                       "FROM bangdb.user "+
-                      "WHERE email = ?";
-            connection.query(sql, [email], function (err, members) {
+                      "WHERE email = aes_encrypt(" + connection.escape(email) + ", unhex(" + connection.escape(hexkey) + ")); ";
+            connection.query(sql, function (err, members) {
                 if (err) {
                     callback(err);
                 } else {
@@ -66,9 +67,10 @@ router.post('/', function (req, res, next) {
         }
 
         function insertMember(hashPassword, connection, callback) {
-            var sql = "insert into bangdb.user(username, email, password) "+
-                       "values (?, ?, ?)";
-            connection.query(sql, [username, email, hashPassword], function (err, member) {
+            console.log('insertmember=========');
+            var sql = "INSERT INTO user(username, email, password) "+
+                       "VALUES (" + connection.escape(username) + ", aes_encrypt(" + connection.escape(email) + ", unhex(" + connection.escape(hexkey) + ")), " + connection.escape(hashPassword) + ");";
+            connection.query(sql, function (err, member) {
                 connection.release();
                 if (err) {
                     callback(err);
@@ -117,7 +119,8 @@ router.post('/login', function (req, res, next) {
                    } else {
                        console.log("req.user :"+req.user.id);
                        res.json({
-                            "result":{"message": "로그인 되었습니다"}
+                            "result":{"message": "로그인 되었습니다",
+                                        "id": req.user.id}
                        });
                        //res.json(user);
 
@@ -135,7 +138,6 @@ router.post('/login', function (req, res, next) {
 //로그인(페이스북)
 router.post('/facebook/token', function (req, res, next) {
     if (req.secure) {
-        console.log('dddddd');
         passport.authenticate('facebook-token', function (err, user, info) {
             if (err) {
                 next(err);
