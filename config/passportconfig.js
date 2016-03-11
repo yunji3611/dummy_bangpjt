@@ -65,6 +65,7 @@ module.exports = function (passport) {
                         var err = new Error('사용자가 존재하지 않습니다');
                         callback(err);
                     } else {
+
                         var user = {
                             "id": members[0].id,
                             "email": members[0].email,
