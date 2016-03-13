@@ -102,6 +102,7 @@ module.exports = function (passport) {
                       "SET registration_token =? "+
                       "WHERE id=? ";
             connection.query(sql, [registration_token, user.id], function (err) {
+                connection.release();
                 if (err) {
                     callback(err);
                 } else {

@@ -7,9 +7,11 @@ var nodeschedule = require('node-schedule');
 var router = express.Router();
 
 // 임대 알림
-router.post('/:orderId', function (req, res, next) {
+router.get('/:orderId', function (req, res, next) {
 
-    function getConnection(connection, callback) {
+    var reqPost = req.params.orderId;    //  order한 주문 id
+
+    function getConnection(callback) {
         pool.getConnection(function (err, connection) {
             if (err) {
                 callback(err);
@@ -20,12 +22,12 @@ router.post('/:orderId', function (req, res, next) {
     }
 
     function selectKey(connection, callback) {
-        console.log('orderId===>'+orderId);
+        console.log('orderId===>'+reqPost);
         var sql = "SELECT user_id, registration_token " +
                           "year(rental_endtime) as year, month(rental_endtime) as month, day(rental_endtime) as day "+
                    "FROM bangdb.orders o LEFT JOIN bangdb.user u ON (o.user_id = u.id) "+
                    "WHERE user_id = ?";
-        connection.query(sql, [orderId], function (err, order) {
+        connection.query(sql, [reqPost], function (err, order) {
             if (err) {
                 callback(err);
             } else {

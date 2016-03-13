@@ -1,6 +1,9 @@
 var express = require('express');
 var async = require('async');
+var request = require('request');
+
 var router = express.Router();
+var hexkey = process.env.HEX_KEY;
 
 function isLoggedIn(req, res, next) {
     if (!req.isAuthenticated()) {
@@ -17,7 +20,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
     if (req.secure) {
         var user = req.user;
         var postId = req.body.post_id;
-        var period = req.body.post_id;
+        var period = req.body.period;
         var address = req.body.address;
         var phone = req.body.phone;
         var paymethod = req.body.paymethod;
@@ -50,8 +53,13 @@ router.post('/', isLoggedIn, function (req, res, next) {
 
         function insertOrder(connection, callback) {
             var sql = "INSERT INTO bangdb.orders(user_id, post_id, rental_starttime, rental_endtime, address, phone, paymethod, month_price) " +
-                      "VALUES (?, ?, DATE_ADD(utc_timestamp(), INTERVAL 1 week), DATE_ADD(utc_timestamp(), INTERVAL ? month), ?, ?, ?, ?)";
-            connection.query(sql, [user.id, postId, period, address, phone, paymethod, monthPrice], function (err, orderdetail) {
+                      "VALUES (" + connection.escape(user.id) + ", " + connection.escape(postId) + ", " +
+                              " DATE_ADD(utc_timestamp(), INTERVAL 1 week), DATE_ADD(utc_timestamp(), INTERVAL " + connection.escape(period) + " month), " +
+                              " aes_encrypt( " + connection.escape(address) + ", unhex(" + connection.escape(hexkey) + "))," +
+                              " aes_encrypt(" + connection.escape(phone) + ", unhex(" + connection.escape(hexkey) + "))," +
+                              " " + connection.escape(paymethod) + ", " + connection.escape(monthPrice) + ")";
+            connection.query(sql, function (err, orderdetail) {
+                connection.release();
                 if (err) {
                     callback(err);
                 } else {
@@ -64,6 +72,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
             if (err) {
                 next(err);
             } else {
+                console.log("orderId====>"+orderId);
                 request.get({url: 'http://localhost/rentalpushes/'+ orderId}, function (err, httpResponse, body) {
                     console.log(body);
                     res.json({"result": {"message": "임대되었습니다"}});
