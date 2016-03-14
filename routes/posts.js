@@ -472,7 +472,7 @@ function isLoggedIn(req, res, next) {
 }
 
 
-//게시물 등록 -검토완료
+//게시물 등록
 router.post('/', isLoggedIn, function (req, res, next) {
 
 
@@ -579,7 +579,6 @@ router.post('/', isLoggedIn, function (req, res, next) {
 
 
 });
-
 
 
 //게시물 수정
@@ -740,7 +739,7 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
   });   // form.parse
 });
 
-//게시물 삭제 -트랜잭션완료
+//게시물 삭제
 
 router.delete('/:post_id',isLoggedIn, function (req, res, next) {
   var user = req.user;
@@ -1008,7 +1007,7 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
 //
 //});
 
-//댓글 등록 -완료
+//댓글 등록
 router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
 
   var user = req.user;
@@ -1065,7 +1064,7 @@ router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
 
 });
 
-//댓글 삭제 -검토완료
+//댓글 삭제
 router.delete('/:post_id/replies/:reply_id', isLoggedIn, function (req, res, next) {
 
   var user = req.user;
