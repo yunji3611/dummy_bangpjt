@@ -65,6 +65,7 @@ module.exports = function (passport) {
                 } else {
                     if (members.length === 0) {
                         var err = new Error('사용자가 존재하지 않습니다');
+                        err.code = "E00002";
                         callback(err);
                     } else {
                         var user = {
@@ -112,7 +113,6 @@ module.exports = function (passport) {
 
         async.waterfall([getConnection, selectUser, compareUserInput, tokenUpdate], function (err, user) {
             if (err) {
-                var err = new Error("login passport 에러입니다");
                 done(err);
             } else {
                 done(null, user);
