@@ -31,6 +31,8 @@ router.get('/', function(req, res, next) {
         }, function(err) {
           connection.release();
           if (err) {
+            err.code = "E00003";
+            err.message = "검색한 게시물 조회가 실패하였습니다.";
             callback(err);
           } else {
             var results = {
@@ -50,10 +52,7 @@ router.get('/', function(req, res, next) {
 
   async.waterfall([getConnection, selectKeyword], function(err, results) {
     if (err) {
-      var err = {
-        "code": "E00003",
-        "message": "게시물 목록 조회에 실패하였습니다."
-      }
+
       next (err);
     } else {
       res.json(results);
