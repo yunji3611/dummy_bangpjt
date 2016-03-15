@@ -87,6 +87,8 @@ router.get('/', function (req, res, next) {
       }, function (err) {
         connection.release();
         if (err) {
+          err.code = "E00003";
+          err.message = "임대게시물 목록 조회에 실패하였습니다.";
           callback(err);
         } else {
           var results =
@@ -105,10 +107,7 @@ router.get('/', function (req, res, next) {
 
     async.waterfall([getConnection, selectPosts, resultJSON], function (err, result) {
       if (err) {
-        var err = {
-          "code": "E00003",
-          "message": "게시물 목록 조회에 실패하였습니다."
-        }
+
         next(err); //처리도중문제이거나 쿼리수행증..// 뭇
       } else {
         res.json(result);
@@ -175,6 +174,8 @@ router.get('/', function (req, res, next) {
       }, function (err) {
         connection.release();
         if (err) {
+          err.code = "E00003";
+          err.message = "커뮤니티 목록 조회에 실패하였습니다.";
           callback(err);
 
         } else {
@@ -194,10 +195,6 @@ router.get('/', function (req, res, next) {
 
     async.waterfall([getConnection, selectCommunity, resultJSON2], function (err, result) {
       if (err) {
-        var err = {
-          "code": "E00003",
-          "message": "커뮤니티 게시물 목록 조회에 실패하였습니다."
-        }
         next(err); //처리도중문제이거나 쿼리수행증..// 뭇
       } else {
         res.json(result);
@@ -263,6 +260,8 @@ router.get('/:post_id', function (req, res, next) {
             cb(null);
           }, function(err) {
               if (err) {
+                err.code = "E00003";
+                err.message = "해시태그 조회에 실패하였습니다.";
                 callback(err);
               } else {
 
@@ -291,6 +290,8 @@ router.get('/:post_id', function (req, res, next) {
           }, function(err) {
               connection.release();
             if (err) {
+              err.code = "E00003";
+              err.message = "커뮤니티 게시물 상세 조회에 실패하였습니다.";
               callback(err);
             } else {
               callback(null,c_details, replies);
@@ -303,10 +304,6 @@ router.get('/:post_id', function (req, res, next) {
 
     async.waterfall([getConnection, communityDetail, selectTags2, selectReply2], function (err, results) {
       if (err) {
-        var err = {
-          "code": "E00003",
-          "message": "커뮤니티 게시물 상세 조회에 실패하였습니다."
-        }
         next(err);
       } else {
         console.log('결과' + results);
@@ -378,6 +375,8 @@ router.get('/:post_id', function (req, res, next) {
 
           }, function(err){
             if (err) {
+              err.code = "E00003";
+              err.message = "해시태그 조회에 실패하였습니다.";
               callback(err);
             } else {
               callback(null,i_details, connection);
@@ -414,6 +413,8 @@ router.get('/:post_id', function (req, res, next) {
           }, function(err) {
             connection.release();
             if (err) {
+              err.code = "E00003";
+              err.message = "임대 게시물 상세 조회에 실패하였습니다.";
               callback(err);
             } else {
               callback(null, i_details);
@@ -426,10 +427,6 @@ router.get('/:post_id', function (req, res, next) {
 
     async.waterfall([getConnection, interiorDetail, selectTags, selectFurniture], function (err, results) {
       if (err) {
-        var err = {
-          "code": "E00003",
-          "message": "임대 게시물 상세 조회에 실패하였습니다."
-        };
         next(err);
       } else {
         console.log('결과' + results);
@@ -530,7 +527,8 @@ router.post('/', isLoggedIn, function (req, res, next) {
               connection.query(sql, [fields['content'], user.id], function (err, result) {
                 if (err) {
                   //connection.rollback();
-
+                  err.code = "E00005";
+                  err.message = "게시물 등록이 실패하였습니다.";
                   connection.release();
                   callback(err);
                 } else {
@@ -542,6 +540,8 @@ router.post('/', isLoggedIn, function (req, res, next) {
                     if (err) {
                       connection.rollback();
                       connection.release();
+                      err.code = "E00005";
+                      err.message = "게시물 파일 업로드가 실패하였습니다.";
                       callback(err);
                     } else {
                         connection.commit();
@@ -560,10 +560,6 @@ router.post('/', isLoggedIn, function (req, res, next) {
 
     async.waterfall([getConnection, uploadPhoto], function (err, result) {
       if (err) {
-        var err = {
-          "code": "E00005",
-          "message": "게시물 등록이 실패하였습니다."
-        }
         next(err);
       } else {
         var result = {
@@ -644,6 +640,8 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
             });
             s3.deleteObject(s3.params, function (err, data) {
               if (err) {
+                err.code = "E00004";
+                err.message = "파일을 삭제할 수 없습니다.";
                 connection.release();
                 console.log(err, err.stack)
               } else {
@@ -701,6 +699,8 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
               "VALUES (?, ?, ?, ?)";
             connection.query(filesql, [postId, location, modifiedFileName, originalFileName], function (err, result) {
               if (err) {
+                err.code = "E00004";
+                err.message = "파일을 업로드 할 수 없습니다.";
                 callback(err);
               } else {
                 // 수정할 내용이 있는지 없는지
@@ -713,6 +713,8 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
                   connection.query(contentsql, [content, postId, user.id], function (err, result) {
                     connection.release();
                     if (err) {
+                      err.code = "E00004";
+                      err.message = "게시물을 수정할 수 없습니다.";
                       callback(err);
                     } else {
                       callback(null);
@@ -772,7 +774,8 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
         } else {
             if (results[0].user_id !== user.id) {
               //console.log('삭제' + results[0].user_id);
-              var err = new Error('게시물을 삭제 할 수 없습니다.');
+              var err = new Error('삭제 권한이 없습니다.');
+              err.code = "E00006";
               callback(err);
             } else {
               callback(null, connection);
@@ -801,6 +804,8 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
               connection.query(sql, [postId], function (err, result) {
                 if (err) {
                   console.log('댓글삭제2');
+                  err.code = "E00006";
+                  err.message = "댓글을 삭제할 수 없습니다.";
                   connection.release();
                   callback(err);
                 } else {
@@ -856,6 +861,8 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
                           "WHERE post_id=?";
                         connection.query(deletesql, [postId], function (err, deleteResult) {
                           if (err) {
+                            err.code = "E00006";
+                            err.message = "파일을 삭제할 수 없습니다.";
                             callback(err);
                           } else {
                             callback(null);
@@ -882,6 +889,8 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
               connection.query(sql, [postId], function (err, result) {
 
                 if (err) {
+                  err.code = "E00006";
+                  err.message = "게시물을 삭제할 수 없습니다.";
                   connection.rollback();
                   connection.release();
                   callback(err);
@@ -909,10 +918,6 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
 //, deleteReply, deletePhoto, deletePost
     async.waterfall([getConnection, compareUser, deleteTotal], function (err, result) {
       if (err) {
-        var err = {
-          "code": "E00006",
-          "message": "게시물 삭제에 실패하였습니다."
-        }
         next(err);
       } else {
         var result = {"result" : {"message" : "게시물이 삭제되었습니다." }}
@@ -1034,6 +1039,8 @@ router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
     connection.query(sql, values, function (err, result) {
         connection.release();
       if (err) {
+        err.code = "E00005";
+        err.message = "댓글을 등록할 수 없습니다.";
         callback(err);
       } else {
         callback(null, {
@@ -1046,10 +1053,6 @@ router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
 
   async.waterfall([getConnection, insertReply], function (err, result) {
     if (err) {
-      var err = {
-        "code": "E00005",
-        "message": "댓글을 등록할 수 없습니다."
-      }
       next(err);
     } else {
       request.get({url:'http://localhost/replypushes/'+pid}, function(err, httpResponse, body){
@@ -1095,7 +1098,8 @@ router.delete('/:post_id/replies/:reply_id', isLoggedIn, function (req, res, nex
       } else {
         if (results[0].userid !== user.id) {
           console.log('확인' + results[0].userid);
-          var err = new Error('댓글을 삭제할 수 없습니다.');
+          var err = new Error('삭제권한이 없습니다');
+          err.code = "E00005";
           callback(err);
         } else {
           console.log('ㅇㅇㅇㅇ' +results);
@@ -1117,6 +1121,8 @@ router.delete('/:post_id/replies/:reply_id', isLoggedIn, function (req, res, nex
     connection.query(deletesql, [results[0].replyId], function (err, r_results) {
       connection.release();
       if (err) {
+        err.code = "E00005";
+        err.message = "댓글을 삭제할 수 없습니다.";
         console.log('???' +results[0].replyId);
         callback(err);
       } else {
@@ -1129,10 +1135,7 @@ router.delete('/:post_id/replies/:reply_id', isLoggedIn, function (req, res, nex
 
   async.waterfall([getConnection, compareUser, deleteReply], function (err, result) {
     if (err) {
-      var err = {
-        "code": "E00006",
-        "message": "댓글을 삭제할 수 없습니다."
-      }
+
       next(err);
     } else {
       var result = {
