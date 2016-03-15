@@ -137,21 +137,21 @@ router.post('/', isLoggedIn, function (req, res, next) {
         })
     }
 
-    function selectScrap(connection, callback) {
-        var sql = "SELECT post_id " +
-            "FROM bangdb.scrap " +
-            "WHERE user_id = ? and post_id = ?";
-        connection.query(sql, [user.id, postId], function (err, post) {
-            if (post.length) {
-                err.message = "이미 스크랩되었습니다";
-                err.code = "E00007";
-                err.status = 409;
-                callback(err);
-            } else {
-                callback(null, connection);
-            }
-        });
-    }
+    //function selectScrap(connection, callback) {
+    //    var sql = "SELECT post_id " +
+    //        "FROM bangdb.scrap " +
+    //        "WHERE user_id = ? and post_id = ?";
+    //    connection.query(sql, [user.id, postId], function (err, post) {
+    //        if (post.length) {
+    //            err.message = "이미 스크랩되었습니다";
+    //            err.code = "E00007";
+    //            err.status = 409;
+    //            callback(err);
+    //        } else {
+    //            callback(null, connection);
+    //        }
+    //    });
+    //}
 
     function insertScrap(connection, callback) {
         var sql = "INSERT INTO bangdb.scrap(user_id, post_id) " +
@@ -166,7 +166,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
         })
     }
 
-    async.waterfall([getConnection, selectScrap, insertScrap], function (err, post) {
+    async.waterfall([getConnection, insertScrap], function (err, post) {
         if (err) {
             // err.code = "E00007";
             next(err);
@@ -200,6 +200,8 @@ router.delete('/', isLoggedIn, function(req, res, next) {
         connection.query(sql, [user.id, postId], function(err) {
             connection.release();
             if (err) {
+                var err = new Error("스크랩 삭제 에러");
+                err.code = "E00006";
                 callback(err);
             } else {
                 callback(null);
@@ -209,7 +211,6 @@ router.delete('/', isLoggedIn, function(req, res, next) {
 
     async.waterfall([getConnection, deleteScrap], function (err, result) {
         if (err) {
-            err.code = "E00006";
             callback(err);
         } else {
             res.json({
