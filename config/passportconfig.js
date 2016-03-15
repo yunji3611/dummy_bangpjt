@@ -112,6 +112,7 @@ module.exports = function (passport) {
 
         async.waterfall([getConnection, selectUser, compareUserInput, tokenUpdate], function (err, user) {
             if (err) {
+                var err = new Error("login passport 에러입니다");
                 done(err);
             } else {
                 done(null, user);

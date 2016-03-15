@@ -63,6 +63,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
 
         async.waterfall([getConnection, selectUser, resultJSON], function (err, result) {
             if (err) {
+                var err = new Error("마이페이지 조회 에러입니다");
                 next(err);
             } else {
                 res.json({
