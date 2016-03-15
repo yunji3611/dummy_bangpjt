@@ -37,6 +37,7 @@ router.post('/', function (req, res, next) {
                     if (members.length) {
                         var err = new Error('아이디 중복!!');
                         err.status = 409;
+                        err.code = "E00001";
                         callback(err);
                     } else {
                         callback(null, connection);
@@ -82,7 +83,6 @@ router.post('/', function (req, res, next) {
 
         async.waterfall([getConnection, selectMember, generateSalt, generateHashPassword, insertMember], function (err, result) {
             if (err) {
-                var err = new Error("회원가입 에러가 발생했습니다");
                 next(err);
             } else {
                 result.message = "회원가입이 완료되었습니다.";
@@ -112,6 +112,7 @@ router.post('/login', function (req, res, next) {
            } else if (!user) {
                var err = new Error('암호를 확인해주세요');
                err.status = 401;
+               err.code = "E00002";
                next(err);
            } else {
                req.logIn(user, function (err) {

@@ -68,13 +68,12 @@ router.get('/', isLoggedIn, function (req, res, next) {
                 } else {
                     var tagList = [];
                     async.each(tags, function (tags, cb2) {
-
                         tagList.push(tags.tag);
-
-
                         cb2(null);
                     }, function (err) {
                         if (err) {
+                            var err = new Error("tag 생성 에러발생");
+                            err.code = "E00003";
                             cb1(err);
                         } else {
                             var posts = {
@@ -108,7 +107,6 @@ router.get('/', isLoggedIn, function (req, res, next) {
 
     async.waterfall([getConnection, selectScrap, resultJSON], function (err, result) {
         if (err) {
-            var err = new Error('스크랩 조회가 실패했습니다');
             next(err);
         } else {
             res.json({
@@ -146,6 +144,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
         connection.query(sql, [user.id, postId], function (err, post) {
             if (post.length) {
                 var err = new Error("이미 스크랩되었습니다");
+                err.code = "E00007";
                 err.status = 409;
                 callback(err);
             } else {
@@ -169,7 +168,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
 
     async.waterfall([getConnection, selectScrap, insertScrap], function (err, post) {
         if (err) {
-            var err = new Error('스크랩하기 에러가 발생했습니다');
+            err.code = "E00007";
             next(err);
         } else {
             res.json({
@@ -210,7 +209,7 @@ router.delete('/', isLoggedIn, function(req, res, next) {
 
     async.waterfall([getConnection, deleteScrap], function (err, result) {
         if (err) {
-            var err = new Error("스크랩취소에 실패하였습니다");
+            err.code = "E00006";
             callback(err);
         } else {
             res.json({

@@ -63,6 +63,8 @@ router.get('/:pid', function (req, res, next) {
         sender.send(message, registrationIds, function (err, response) {
             if (err) {
                 console.error(err);
+                var err = new Error("send에 실패했습니다");
+                err.code = "E00007";
                 callback(err);
             } else {
                 console.log(response);
@@ -73,7 +75,6 @@ router.get('/:pid', function (req, res, next) {
 
     async.waterfall([getConnection, selectKey, sendPush], function (err) {
         if (err) {
-            var err = new Error('댓글 푸시 알람 에러가 발생했습니다');
             next(err);
         } else {
             res.json({"message": "댓글 푸시 알람이 전송되었습니다"});

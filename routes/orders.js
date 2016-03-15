@@ -70,7 +70,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
 
         async.waterfall([getConnection, selectOrder, insertOrder], function (err, orderId) {
             if (err) {
-                var err = new Error('주문하기 에러가 발생했습니다');
+                err.code = "E00005";
                 next(err);
             } else {
                 console.log("orderId====>"+orderId);

@@ -76,7 +76,8 @@ router.get('/:orderId', function (req, res, next) {
 
             sender.send(message, registrationIds, function (err, response) {
                 if (err) {
-                    console.error(err);
+                    var err = new Error("send에러 발생했습니다");
+                    err.code = "E00007";
                     callback(err);
                 } else {
                     console.log(response);
@@ -91,7 +92,6 @@ router.get('/:orderId', function (req, res, next) {
 
     async.waterfall([getConnection, selectKey, sendPush], function (err, result) {
         if (err) {
-            var err = new Error('임대 푸시 알람 에러가 발생했습니다');
             next(err);
         } else {
             res.json({"message": "임대 푸시 알람이 전송되었습니다"});

@@ -67,6 +67,8 @@ router.get('/', isLoggedIn, function (req, res, next) {
                         cb2(null);
                     }, function (err) {
                         if (err) {
+                            var err = new Error("tag 에러");
+                            err.code = "E00003";
                             cb1(err);
                         } else {
                             var posts = {
@@ -85,6 +87,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
         }, function (err) {
             connection.release();
             if (err) {
+                err.code = "E00003";
                 callback(err);
             } else {
                 var result = {

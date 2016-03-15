@@ -43,6 +43,8 @@ router.get('/', isLoggedIn, function (req, res, next) {
             connection.query(sql, [user.id, user.id], function (err, info) {
                 connection.release();
                 if (err) {
+                    var err = new Error("마이페이지 조회에 실패했습니다");
+                    err.code = "E00003";
                     callback(err);
                 } else {
 
@@ -63,7 +65,6 @@ router.get('/', isLoggedIn, function (req, res, next) {
 
         async.waterfall([getConnection, selectUser, resultJSON], function (err, result) {
             if (err) {
-                var err = new Error("마이페이지 조회 에러입니다");
                 next(err);
             } else {
                 res.json({
@@ -139,6 +140,7 @@ router.put('/', isLoggedIn, function (req, res, next) {
                                 if (err) {
                                     connection.release();
                                     var err = new Error("s3 delete 에러입니다");
+                                    err.code = "E00004";
                                     console.log(err, err.stack)
                                 } else {
                                     console.log(data);
@@ -170,7 +172,8 @@ router.put('/', isLoggedIn, function (req, res, next) {
                     })
                     .send(function (err, data) {
                         if (err) {
-                            console.log(err);
+                            var err = new Error("마이페이지 프로필사진 업로드 실패했습니다");
+                            err.code = "E00004";
                             callback(err);
                         } else {
                             console.log("데이터Location의 정보 " + data.Location);
@@ -199,7 +202,6 @@ router.put('/', isLoggedIn, function (req, res, next) {
 
             async.waterfall([getConnection, deletePhoto, upDatePhoto], function (err, result) {
                 if (err) {
-                    var err = new Error('프로필 사진 변경 에러가 발생했습니다');
                     next(err);
                 } else {
                     res.json('프로필 사진 변경이 완료되었습니다');
