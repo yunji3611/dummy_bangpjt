@@ -391,7 +391,7 @@ router.get('/:post_id', function (req, res, next) {
 
 
     function selectFurniture(i_details, connection, callback) {
-      var furnituresql = "SELECT f.fphoto_path, f.brand, f.name, f.no, f.size, f.color_id, f.link, f.price " +
+      var furnituresql = "SELECT f.f_photo_path, f.brand, f.name, f.no, f.size, f.color_id, f.link, f.price " +
         "FROM furniture f LEFT JOIN post p ON(f.post_id = p.id) " +
         "LEFT JOIN color c ON(f.color_id = c.id) " +
         "WHERE p.id = ? ";
@@ -401,7 +401,7 @@ router.get('/:post_id', function (req, res, next) {
           callback(err);
         } else {
           async.each(furnitures, function(furnitures, cb2){
-            var furniture = { "furniture_url" : furnitures.fphoto_path,
+            var furniture = { "furniture_url" : furnitures.f_photo_path,
               "brand": furnitures.brand,
               "name" : furnitures.name,
               "no" : furnitures.no,
