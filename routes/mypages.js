@@ -138,6 +138,7 @@ router.put('/', isLoggedIn, function (req, res, next) {
                             s3.deleteObject(s3.params, function (err, data) {
                                 if (err) {
                                     connection.release();
+                                    var err = new Error("s3 delete 에러입니다");
                                     console.log(err, err.stack)
                                 } else {
                                     console.log(data);
@@ -198,6 +199,7 @@ router.put('/', isLoggedIn, function (req, res, next) {
 
             async.waterfall([getConnection, deletePhoto, upDatePhoto], function (err, result) {
                 if (err) {
+                    var err = new Error('프로필 사진 변경 에러가 발생했습니다');
                     next(err);
                 } else {
                     res.json('프로필 사진 변경이 완료되었습니다');

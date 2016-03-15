@@ -82,6 +82,7 @@ router.post('/', function (req, res, next) {
 
         async.waterfall([getConnection, selectMember, generateSalt, generateHashPassword, insertMember], function (err, result) {
             if (err) {
+                var err = new Error("회원가입 에러가 발생했습니다");
                 next(err);
             } else {
                 result.message = "회원가입이 완료되었습니다.";
@@ -140,6 +141,7 @@ router.post('/facebook/token', function (req, res, next) {
     if (req.secure) {
         passport.authenticate('facebook-token', function (err, user, info) {
             if (err) {
+                var err = new Error("facebook 로그인 에러");
                 next(err);
             } else {
                 req.login(user, function (err) {

@@ -108,6 +108,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
 
     async.waterfall([getConnection, selectScrap, resultJSON], function (err, result) {
         if (err) {
+            var err = new Error('스크랩 조회가 실패했습니다');
             next(err);
         } else {
             res.json({
@@ -168,6 +169,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
 
     async.waterfall([getConnection, selectScrap, insertScrap], function (err, post) {
         if (err) {
+            var err = new Error('스크랩하기 에러가 발생했습니다');
             next(err);
         } else {
             res.json({
