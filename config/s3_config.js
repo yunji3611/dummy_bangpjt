@@ -1,6 +1,6 @@
 var s3 = {
-    "key" :"AKIAIAWVMOE6SCKLSIUQ",
-    "secret" :"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",
+    "key" : process.env.BANG_S3_KEY,
+    "secret" : process.env.BANG_S3_SECRET,
     "region" :"ap-northeast-2",
     "bucket" :"bangpjt",
     "imageACL": "public-read",
