@@ -63,7 +63,6 @@ router.get('/', isLoggedIn, function (req, res, next) {
                         "LEFT JOIN bangdb.hashtag h on (h.id = hp.hashtag_id) " +
                         "WHERE p.id = ?";
             connection.query(sql, [scrap.id], function (err, tags) {
-                connection.release();
                 if (err) {
                     cb1(err);
                 } else {
