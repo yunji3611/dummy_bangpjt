@@ -143,6 +143,7 @@ router.post('/facebook/token', function (req, res, next) {
         passport.authenticate('facebook-token', function (err, user, info) {
             if (err) {
                 var err = new Error("facebook 로그인 에러");
+                err.code = "E00002";
                 next(err);
             } else {
                 req.login(user, function (err) {

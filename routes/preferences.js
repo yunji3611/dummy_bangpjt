@@ -64,10 +64,10 @@ router.get('/', function (req, res, next) {
             });  // query
 
         }, function(err){
-            var err = new Error("취향조사 내용전달 실패했습니다");
-            err.code = "E00003";
             connection.release();
             if (err) {
+                var err = new Error("취향조사 내용전달 실패했습니다");
+                err.code = "E00003";
                 callback(err);
             } else {
                 callback(null, preferList);

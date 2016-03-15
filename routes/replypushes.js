@@ -30,6 +30,8 @@ router.get('/:pid', function (req, res, next) {
         connection.query(sql, [reqPost], function (err, key) {
             connection.release();
             if (err) {
+                err.message = "select registration token 에러발생 ";
+                err.code = "E00007";
                 callback(err);
             } else {
                 callback(null, key);

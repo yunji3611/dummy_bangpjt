@@ -143,7 +143,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
             "WHERE user_id = ? and post_id = ?";
         connection.query(sql, [user.id, postId], function (err, post) {
             if (post.length) {
-                var err = new Error("이미 스크랩되었습니다");
+                err.message = "이미 스크랩되었습니다";
                 err.code = "E00007";
                 err.status = 409;
                 callback(err);
