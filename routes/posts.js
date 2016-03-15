@@ -75,7 +75,7 @@ router.get('/', function (req, res, next) {
                   "file_url": item.file_path,
                   "scrap_count": item.scrap,
                   "hash_tag": tagList,
-                  "category": item.category,
+                  "category": item.category
                 };
                 interiorList.push(postresult);
                 cb(null);
