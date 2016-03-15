@@ -12,6 +12,7 @@ function isLoggedIn(req, res, next) {
     if (!req.isAuthenticated()) {
         var err = new Error('로그인이 필요합니다');
         err.status = 401;
+        err.code = "E0000";
         next(err);
     } else {
         next();
