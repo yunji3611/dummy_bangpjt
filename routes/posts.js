@@ -767,15 +767,16 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
     }
     function compareUser(connection, callback) {
       var sql = "SELECT user_id FROM post "+
-      "WHERE id = ?";
+                "WHERE id = ?";
       connection.query(sql, [postId] , function(err, results) {
         if (err) {
           callback(err);
         } else {
             if (results[0].user_id !== user.id) {
               //console.log('삭제' + results[0].user_id);
-              var err = new Error('삭제 권한이 없습니다.');
+              var err = new Error();
               err.code = "E00006";
+              err.message = "삭제 권한이 없습니다.";
               callback(err);
             } else {
               callback(null, connection);
@@ -810,7 +811,30 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
                   callback(err);
                 } else {
                   console.log('댓글삭제');
-                  callback(null, result);
+                  callback(null);
+                }
+              });
+            }
+          }
+
+          function deleteTags(callback) {
+            if (err) {
+              console.log('태그삭제실패');
+              connection.rollback();
+              connection.release();
+              callback(err);
+            }else {
+              var sql = "DELETE FROM hashtag_has_post "+
+                        "WHERE post_id = ? ";
+              connection.query(sql, [postId], function (err, result) {
+                if (err) {
+                  console.log('댓글삭제2');
+                  err.code = "E00006";
+                  err.message = "태그를 삭제할 수 없습니다.";
+                  connection.release();
+                  callback(err);
+                } else {
+                  callback(null);
                 }
               });
             }
@@ -885,7 +909,7 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
               callback(err);
             } else {
               var sql ="DELETE from post " +
-                "WHERE id = ? ";
+                       "WHERE id = ? ";
               connection.query(sql, [postId], function (err, result) {
 
                 if (err) {
@@ -903,7 +927,7 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
             }
           }
 
-          async.series([deleteReply, deletePhoto, deletePost], function (err, result) {
+          async.series([deleteReply, deleteTags, deletePhoto, deletePost], function (err, result) {
             if (err) {
               callback(err);
             } else {
