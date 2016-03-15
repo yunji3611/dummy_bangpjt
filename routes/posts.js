@@ -128,7 +128,7 @@ router.get('/', function (req, res, next) {
 
       connection.query(community, [limit, offset], function (err, community_results) {
         if (err) {
-          connection.release();
+            connection.release();
           callback(err);
         } else {
           callback(null, connection, community_results)
@@ -282,7 +282,6 @@ router.get('/:post_id', function (req, res, next) {
         if (err) {
           callback(err);
         } else {
-
           async.each(replies, function(item2, cb2) {
             var reply = {"username" : item2.username,
                         "reply_content" : item2.reply_content,
@@ -290,10 +289,10 @@ router.get('/:post_id', function (req, res, next) {
             replyList.push(reply);
             cb2(null);
           }, function(err) {
+              connection.release();
             if (err) {
               callback(err);
             } else {
-
               callback(null,c_details, replies);
             }
           })
@@ -430,7 +429,7 @@ router.get('/:post_id', function (req, res, next) {
         var err = {
           "code": "E00003",
           "message": "임대 게시물 상세 조회에 실패하였습니다."
-        }
+        };
         next(err);
       } else {
         console.log('결과' + results);
@@ -446,8 +445,7 @@ router.get('/:post_id', function (req, res, next) {
               "month_price": results[0].month_price,
               "hash_tag": tagList,
               //"reply": replyList,
-              "furnitures" :furnitureList,
-
+              "furnitures" :furnitureList
             }
           }
         });
@@ -546,9 +544,9 @@ router.post('/', isLoggedIn, function (req, res, next) {
                       connection.release();
                       callback(err);
                     } else {
-                      //var post_id = result.insertId;
-                      console.log('아진짜');
-                      callback(null);
+                        connection.commit();
+                        connection.release();
+                        callback(null);
                     }
                   });
                 }
@@ -657,7 +655,6 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
                   if (err) {
                     callback(err);
                   } else {
-                    console.log("===디비에서 파일 삭제함!!");
                     callback(null, connection);
                   }
                 });
@@ -771,11 +768,10 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
       "WHERE id = ?";
       connection.query(sql, [postId] , function(err, results) {
         if (err) {
-          console.log('왜안대');
           callback(err);
         } else {
             if (results[0].user_id !== user.id) {
-              console.log('삭제' + results[0].user_id);
+              //console.log('삭제' + results[0].user_id);
               var err = new Error('게시물을 삭제 할 수 없습니다.');
               callback(err);
             } else {
@@ -1036,6 +1032,7 @@ router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
     values.push(pid);
 
     connection.query(sql, values, function (err, result) {
+        connection.release();
       if (err) {
         callback(err);
       } else {

@@ -29,6 +29,7 @@ router.get('/', function(req, res, next) {
           word.push(item.tag);
           cb(null);
         }, function(err) {
+          connection.release();
           if (err) {
             callback(err);
           } else {

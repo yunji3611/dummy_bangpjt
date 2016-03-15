@@ -43,7 +43,6 @@ router.get('/', isLoggedIn, function (req, res, next) {
                 "GROUP BY p.id " +
                 "LIMIT ? OFFSET ? ";
         connection.query(sql, [user.id, limit, offset], function (err, scraps) {
-            //connection.release();
             if (err) {
                 connection.release();
                 callback(err);
@@ -63,8 +62,8 @@ router.get('/', isLoggedIn, function (req, res, next) {
                         "LEFT JOIN bangdb.hashtag h on (h.id = hp.hashtag_id) " +
                         "WHERE p.id = ?";
             connection.query(sql, [scrap.id], function (err, tags) {
+                connection.release();
                 if (err) {
-                    connection.release();
                     cb1(err);
                 } else {
                     var tagList = [];
@@ -176,6 +175,47 @@ router.post('/', isLoggedIn, function (req, res, next) {
             res.json({
                 "result": {"message": "스크랩되었습니다"}
             });
+        }
+    })
+
+});
+
+router.delete('/', isLoggedIn, function(req, res, next) {
+
+    var user = req.user;
+    var postId = req.body.post_id;
+
+    function getConnection(callback) {
+        pool.getConnection(function (err, connection) {
+            if (err) {
+                callback(err);
+            } else {
+                callback(null, connection);
+            }
+        })
+    }
+
+    function deleteScrap (connection, callback) {
+        var sql = "DELETE FROM bangdb.scrap "+
+                  "WHERE user_id=? and post_id=?";
+        connection.query(sql, [user.id, postId], function(err) {
+            connection.release();
+            if (err) {
+                callback(err);
+            } else {
+                callback(null);
+            }
+        })
+    }
+
+    async.waterfall([getConnection, deleteScrap], function (err, result) {
+        if (err) {
+            var err = new Error("스크랩취소에 실패하였습니다");
+            callback(err);
+        } else {
+            res.json({
+                "result": "스크랩이 취소되었습니다"
+            })
         }
     })
 

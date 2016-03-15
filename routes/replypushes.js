@@ -28,6 +28,7 @@ router.get('/:pid', function (req, res, next) {
                   "FROM bangdb.post p LEFT JOIN  bangdb.user u ON (p.user_id = u.id) "+
                   "WHERE p.id = ?";
         connection.query(sql, [reqPost], function (err, key) {
+            connection.release();
             if (err) {
                 callback(err);
             } else {

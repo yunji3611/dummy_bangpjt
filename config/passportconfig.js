@@ -60,7 +60,6 @@ module.exports = function (passport) {
                 "FROM bangdb.user "+
                 "WHERE email = aes_encrypt(" + connection.escape(username) + ", unhex(" + connection.escape(hexkey) + ")); ";
             connection.query(sql, function (err, members) {
-                // connection.release();
                 if (err) {
                     callback(err);
                 } else {
@@ -158,7 +157,6 @@ module.exports = function (passport) {
                                 connection.release();
                                 callback(err);
                             } else {
-                                connection.release();
                                 var user = {
                                     "id": member.insertId,
                                     "facebookId": profile.id,
@@ -186,8 +184,8 @@ module.exports = function (passport) {
                                        "SET facebook_token = ?,  " +
                                        "WHERE facebook_id = ?";
                             connection.query(update, [accessToken, profile.id], function (err, member) {
-                                connection.release();
                                 if (err) {
+                                    connection.release();
                                     callback(err);
                                 } else {
                                     var user = {
@@ -212,6 +210,7 @@ module.exports = function (passport) {
                       "SET registration_token =? "+
                       "WHERE id=? ";
             connection.query(sql, [registration_token, user.id], function (err) {
+                connection.release();
                 if (err) {
                     callback(err);
                 } else {

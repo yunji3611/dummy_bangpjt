@@ -22,8 +22,8 @@ router.get('/', function (req, res, next) {
               "WHERE p.category IS NOT NULL "+
               "group by category";
     connection.query(sql, [], function(err, results) {
+      connection.release();
       if (err) {
-        connection.release();
         callback(err);
       } else {
         callback(null, results);

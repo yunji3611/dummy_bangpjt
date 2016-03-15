@@ -40,7 +40,6 @@ router.get('/', isLoggedIn, function (req, res, next) {
                      "group by p.id " +
                      "LIMIT ? OFFSET ?";
         connection.query(sql, [user.id, limit, offset], function (err, myposts) {
-            //connection.release();
             if (err) {
                 callback(err);
             } else {

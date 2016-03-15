@@ -65,6 +65,7 @@ router.get('/', function (req, res, next) {
               tagList.push(tags.tag);
               cb2(null);
             }, function (err) {
+              connection.release();
               if (err) {
                 cb(err);
               } else {
