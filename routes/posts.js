@@ -382,7 +382,6 @@ router.get('/:post_id', function (req, res, next) {
               callback(null,i_details, connection);
             }
           });
-
         }
       })
     }
