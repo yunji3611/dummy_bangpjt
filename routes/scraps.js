@@ -8,6 +8,7 @@ var router = express.Router();
 function isLoggedIn(req, res, next) {
     if (!req.isAuthenticated()) {
         var err = new Error('로그인이 필요합니다');
+        err.code = "E00000";
         err.status = 401;
         next(err);
     } else {
@@ -168,7 +169,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
 
     async.waterfall([getConnection, selectScrap, insertScrap], function (err, post) {
         if (err) {
-            err.code = "E00007";
+            // err.code = "E00007";
             next(err);
         } else {
             res.json({
