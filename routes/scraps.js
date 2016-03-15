@@ -68,10 +68,10 @@ router.get('/', isLoggedIn, function (req, res, next) {
                 } else {
                     var tagList = [];
                     async.each(tags, function (tags, cb2) {
-                        var tag = {
-                            "tag": tags.tag
-                        };
-                        tagList.push(tag);
+                        //var tag = {
+                        //    "tag": tags.tag
+                        //};
+                        tagList.push(tags.tag);
 
 
                         cb2(null);
