@@ -16,7 +16,7 @@ module.exports = function (passport) {
             if (err) {
                 done(err);
             } else {
-                var sql = "SELECT id, username, email, facebook_id, facebook_token, facebook_name  "+
+                var sql = "SELECT id, username, email, facebook_id, facebook_token, facebook_name, registration_token  "+
                           "FROM bangdb.user "+
                           "WHERE id = ?";
                 connection.query(sql, [id], function (err, members) {
@@ -27,8 +27,8 @@ module.exports = function (passport) {
                         var user = {
                             "id": members[0].id,
                             "username": members[0].username,
-                            "email": members[0].email
-
+                            "email": members[0].email,
+                            "facebook_id": members[0].facebook_id
                         };
                         done(null, user);
                     }
@@ -54,6 +54,7 @@ module.exports = function (passport) {
                 }
             });
         }
+
 
         function selectUser(connection, callback) {
             var sql = "SELECT convert(aes_decrypt(email, unhex(" + connection.escape(hexkey) + ")) using utf8) as email, password, registration_token, id "+
@@ -81,26 +82,11 @@ module.exports = function (passport) {
             });
         }
 
-        function compareUserInput(user, connection, callback) {
-            bcrypt.compare(password, user.hashPassword, function (err, result) {
-                if (err) {
-                    callback(err);
-                } else {
-                    console.log("result===>"+ result);
-                    if (result === true) {
-                        callback(null, user, connection);
-                    } else {
-                        callback(null, false);
-                    }
-                }
-            });
-        }
-
         function tokenUpdate(user, connection, callback) {
 
             var sql = "UPDATE bangdb.user "+
-                      "SET registration_token =? "+
-                      "WHERE id=? ";
+                "SET registration_token =? "+
+                "WHERE id=? ";
             connection.query(sql, [registration_token, user.id], function (err) {
                 connection.release();
                 if (err) {
@@ -111,7 +97,23 @@ module.exports = function (passport) {
             })
         }
 
-        async.waterfall([getConnection, selectUser, compareUserInput, tokenUpdate], function (err, user) {
+        function compareUserInput(user, callback) {
+            bcrypt.compare(password, user.hashPassword, function (err, result) {
+                if (err) {
+                    callback(err);
+                } else {
+                    console.log("result===>"+ result);
+                    if (result === true) {
+                        callback(null, user);
+                    } else {
+                        callback(null, false);
+                    }
+                }
+            });
+        }
+
+
+        async.waterfall([getConnection, selectUser, tokenUpdate, compareUserInput], function (err, user) {
             if (err) {
                 done(err);
             } else {
@@ -140,6 +142,20 @@ module.exports = function (passport) {
             });
         }
 
+        function tokenUpdate(user, connection, callback) {
+            var sql = "UPDATE bangdb.user "+
+                "SET registration_token =? "+
+                "WHERE id=? ";
+            connection.query(sql, [registration_token, user.id], function (err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    callback(null, user, connection);
+                }
+            })
+        }
+
+
         function selectOrCreateUser (connection, callback) {
             var sql = "SELECT id, facebook_id, facebook_email, facebook_name, registration_token "+
                       "FROM bangdb.user "+
@@ -158,6 +174,7 @@ module.exports = function (passport) {
                                 connection.release();
                                 callback(err);
                             } else {
+                                connection.release();
                                 var user = {
                                     "id": member.insertId,
                                     "facebookId": profile.id,
@@ -165,7 +182,7 @@ module.exports = function (passport) {
                                     "facebookName": profile.displayName,
                                     "registration_token": member[0].registration_token
                                 };
-                                callback(null, user, connection);
+                                callback(null, user);
                             }
                         });
 
@@ -185,8 +202,8 @@ module.exports = function (passport) {
                                        "SET facebook_token = ?,  " +
                                        "WHERE facebook_id = ?";
                             connection.query(update, [accessToken, profile.id], function (err, member) {
+                                connection.release();
                                 if (err) {
-                                    connection.release();
                                     callback(err);
                                 } else {
                                     var user = {
@@ -196,7 +213,7 @@ module.exports = function (passport) {
                                         "facebookEmail": results[0].facebook_email,
                                         "registration_token": member[0].registration_token
                                     };
-                                    callback(null, user, connection);
+                                    callback(null, user);
                                 }
                             });
                         }
@@ -206,21 +223,7 @@ module.exports = function (passport) {
             })
         }
 
-        function tokenUpdate(user, connection, callback) {
-            var sql = "UPDATE bangdb.user "+
-                      "SET registration_token =? "+
-                      "WHERE id=? ";
-            connection.query(sql, [registration_token, user.id], function (err) {
-                connection.release();
-                if (err) {
-                    callback(err);
-                } else {
-                    callback(null, user);
-                }
-            })
-        }
-
-        async.waterfall([getConnection, selectOrCreateUser, tokenUpdate], function (err, user) {
+        async.waterfall([getConnection, tokenUpdate, selectOrCreateUser], function (err, user) {
             if (err) {
                 done(err);
             } else {
