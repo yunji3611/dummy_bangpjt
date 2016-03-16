@@ -597,7 +597,7 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
     var originalFileName = "";
     var modifiedFileName = "";
     var photoType = "";
-    var mimeType = mime.lookup(path.basename(files.path));
+    var mimeType = mime.lookup(path.basename(file.path));
 
     function getConnection(callback) {
       pool.getConnection(function (err, connection) {

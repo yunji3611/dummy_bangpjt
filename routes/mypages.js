@@ -100,7 +100,7 @@ router.put('/', isLoggedIn, function (req, res, next) {
             var originalFileName = "";
             var modifiedFileName = "";
             var photoType = "";
-            var mimeType = mime.lookup(path.basename(files.path));
+            var mimeType = mime.lookup(path.basename(file.path));
 
             function getConnection(callback) {
                 pool.getConnection(function (err, connection) {
@@ -154,6 +154,7 @@ router.put('/', isLoggedIn, function (req, res, next) {
             } // deletePhoto
 
             function upDatePhoto(connection, callback) {
+                console.log("mimtype===>"+ mimeType);
                 var s3 = new AWS.S3({
                     "accessKeyId": s3Config.key,
                     "secretAccessKey": s3Config.secret,
