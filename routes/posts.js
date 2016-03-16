@@ -664,6 +664,7 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
 
     // 사진 insert
     function upDatePhoto(connection, callback) {
+      console.log("mimtype===>"+ mimeType);
       var s3 = new AWS.S3({
         "accessKeyId": s3Config.key,
         "secretAccessKey": s3Config.secret,
