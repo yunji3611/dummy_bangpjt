@@ -32,12 +32,12 @@ router.get('/', function (req, res, next) {
   if (category) {
     function selectPosts(connection, callback) {
       var post1 = "SELECT p.id, p.category, f.file_path, u.username, u.photo_path, count(s.post_id) as scrap " +
-        "FROM post p LEFT JOIN file f ON(f.post_id = p.id) " +
-        "LEFT JOIN scrap s ON(s.post_id = p.id) " +
-        "LEFT JOIN user u ON(u.id = p.user_id) " +
-        "WHERE p.category =? " +
-        "GROUP BY p.id " +
-        "LIMIT ? OFFSET ? ";
+                 "FROM post p LEFT JOIN file f ON(f.post_id = p.id) " +
+                 "LEFT JOIN scrap s ON(s.post_id = p.id) " +
+                 "LEFT JOIN user u ON(u.id = p.user_id) " +
+                 "WHERE p.category =? " +
+                 "GROUP BY p.id " +
+                 "LIMIT ? OFFSET ? ";
 
       connection.query(post1, [category, limit, offset], function (err, post_results) {
         if (err) {
