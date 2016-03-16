@@ -29,7 +29,7 @@ router.get('/', function (req, res, next) {
         callback(null, results);
       }
     })
-  }
+  }//
   var mainList = [];
   function resultJSON(results, callback) {
     async.eachSeries(results, function (item, cb) {
