@@ -167,7 +167,7 @@ module.exports = function (passport) {
                                     "facebookId": profile.id,
                                     "facebookEmail": profile.emails[0],
                                     "facebookName": profile.displayName,
-                                    "registration_token": member[0].registration_token
+                                    "registration_token": member.registration_token
                                 };
                                 callback(null, user);
                             }
@@ -194,11 +194,11 @@ module.exports = function (passport) {
                                     callback(err);
                                 } else {
                                     var user = {
-                                        "id": results[0].id,
-                                        "facebookId": results[0].facebook_id,
-                                        "facebookUsername": results[0].facebook_name,
-                                        "facebookEmail": results[0].facebook_email,
-                                        "registration_token": member[0].registration_token
+                                        "id": members[0].id,
+                                        "facebookId": members[0].facebook_id,
+                                        "facebookUsername": members[0].facebook_name,
+                                        "facebookEmail": members[0].facebook_email,
+                                        "registration_token": member.registration_token
                                     };
                                     callback(null, user);
                                 }
