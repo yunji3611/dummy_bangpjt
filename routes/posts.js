@@ -29,7 +29,8 @@ router.get('/', function (req, res, next) {
   var limit = 10;
   var offset = (page - 1) * limit;
 
-  if (category) {
+
+  if (category != 'community') {
     function selectPosts(connection, callback) {
       var post1 = "SELECT p.id, p.category, f.file_path, u.username, u.photo_path, count(s.post_id) as scrap " +
                  "FROM post p LEFT JOIN file f ON(f.post_id = p.id) " +
@@ -71,34 +72,51 @@ router.get('/', function (req, res, next) {
               if (err) {
                 cb(err);
               } else {
-                console.log("statesql====>"+ state);
-                var statesql = "SELECT * "+
-                               "FROM state "+
-                               "WHERE post_id=? and user_id=?";
-                connection.query(statesql, [item.id, user.id], function (err, states) {
-                  if (err) {
-                   connection.release();
-                    var err = new Error("state err 발생");
-                    err.code = "E00003";
-                    callback(err);
-                  } else {
-                    if (states.length) {
-                      state = 1;
+                //
+                if (user) {
+                  console.log("statesql====>"+ state);
+                  var statesql = "SELECT * "+
+                      "FROM state "+
+                      "WHERE post_id=? and user_id=?";
+                  connection.query(statesql, [item.id, user.id], function (err, states) {
+                    if (err) {
+                      connection.release();
+                      var err = new Error("state err 발생");
+                      err.code = "E00003";
+                      callback(err);
                     } else {
-                      state = 0;
+                      if (states.length) {
+                        state = 1;
+                      } else {
+                        state = 0;
+                      }
+                      var postresult = {
+                        "post_id": item.id,
+                        "file_url": item.file_path,
+                        "scrap_count": item.scrap,
+                        "hash_tag": tagList,
+                        "category": item.category,
+                        "state": state
+                      };
+                      interiorList.push(postresult);
+                      cb(null);
                     }
-                    var postresult = {
-                      "post_id": item.id,
-                      "file_url": item.file_path,
-                      "scrap_count": item.scrap,
-                      "hash_tag": tagList,
-                      "category": item.category,
-                      "state": state
-                    };
-                    interiorList.push(postresult);
-                    cb(null);
-                  }
-                });
+                  });
+                } else {
+                  var postresult = {
+                    "post_id": item.id,
+                    "file_url": item.file_path,
+                    "scrap_count": item.scrap,
+                    "hash_tag": tagList,
+                    "category": item.category,
+                    "state": state
+                  };
+                  interiorList.push(postresult);
+                  cb(null);
+                }
+
+                //
+
               }
             });
           }
@@ -141,11 +159,11 @@ router.get('/', function (req, res, next) {
         "FROM post p LEFT JOIN file f ON(f.post_id = p.id) " +
         "LEFT JOIN scrap s ON(s.post_id = p.id) " +
         "LEFT JOIN user u ON(u.id = p.user_id) " +
-        "WHERE p.category IS NULL " +
+        "WHERE p.category = ? " +
         "GROUP BY p.id " +
         "LIMIT ? OFFSET ? ";
 
-      connection.query(community, [limit, offset], function (err, community_results) {
+      connection.query(community, [category, limit, offset], function (err, community_results) {
         if (err) {
             connection.release();
           callback(err);
@@ -177,34 +195,52 @@ router.get('/', function (req, res, next) {
               if (err) {
                 cb(err);
               } else {
-                var statesql = "SELECT * "+
-                              "FROM state "+
-                              "WHERE post_id=? and user_id=?";
-                connection.query(statesql, [item.id, user.id], function (err, states) {
-                  if (err) {
+                //
+                if (user) {
+                  var statesql = "SELECT * "+
+                      "FROM state "+
+                      "WHERE post_id=? and user_id=?";
+                  connection.query(statesql, [item.id, user.id], function (err, states) {
+                    if (err) {
                       connection.release();
                       var err = new Error("state err 발생");
                       err.code = "E00003";
                       callback(err);
-                  } else {
-                    if (states.length) {
-                      state = 1;
                     } else {
-                      state = 0;
+                      if (states.length) {
+                        state = 1;
+                      } else {
+                        state = 0;
+                      }
+                      var postresult = {
+                        "post_id": item.id,
+                        "username": item.username,
+                        "photo_url": item.photo_path,
+                        "file_url": item.file_path,
+                        "scrap_count": item.scrap,
+                        "hash_tag": tagList,
+                        "state": state
+                      };
+                      communityList.push(postresult);
+                      cb(null);
                     }
-                    var postresult = {
-                      "post_id": item.id,
-                      "username": item.username,
-                      "photo_url": item.photo_path,
-                      "file_url": item.file_path,
-                      "scrap_count": item.scrap,
-                      "hash_tag": tagList,
-                      "state": state
-                    };
-                    communityList.push(postresult);
-                    cb(null);
-                  }
-                });
+                  });
+                } else {
+                  var postresult = {
+                    "post_id": item.id,
+                    "username": item.username,
+                    "photo_url": item.photo_path,
+                    "file_url": item.file_path,
+                    "scrap_count": item.scrap,
+                    "hash_tag": tagList,
+                    "state": state
+                  };
+                  communityList.push(postresult);
+                  cb(null);
+                }
+
+
+                //
               }
             });
           }
