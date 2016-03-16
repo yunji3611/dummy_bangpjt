@@ -5,6 +5,9 @@ var router = express.Router();
 
 // 메인페이지 목록 조회
 router.get('/', function (req, res, next) {
+
+  var category = req.query.category;
+
   function getConnection(callback) {
     pool.getConnection(function(err, connection) {
       if (err) {
@@ -19,9 +22,9 @@ router.get('/', function (req, res, next) {
     var sql = "SELECT p.id, p.category, p.content, f.file_path, count(p.id) as count, count(s.post_id) as scrap "+
               "FROM post p LEFT JOIN file f ON(f.post_id = p.id) "+
               "LEFT JOIN scrap s ON(s.post_id = p.id) "+
-              "WHERE p.category IS NOT NULL "+
+              "WHERE p.category = ? " +
               "group by category";
-    connection.query(sql, [], function(err, results) {
+    connection.query(sql, [category], function(err, results) {
       connection.release();
       if (err) {
         callback(err);
