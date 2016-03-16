@@ -312,7 +312,7 @@ router.get('/:post_id', function (req, res, next) {
     }
 
     function selectReply2(c_details, connection, callback) {
-      var replysql = "SELECT r.username as username, r.reply_content, r.reply_time " +
+      var replysql = "SELECT r.id, r.username as username, r.reply_content, r.reply_time " +
         "FROM reply r LEFT JOIN post p on(r.post_id = p.id) " +
         "WHERE p.id = ? ";
 
@@ -322,6 +322,7 @@ router.get('/:post_id', function (req, res, next) {
         } else {
           async.each(replies, function(item2, cb2) {
             var reply = {"username" : item2.username,
+                        "id" : item2.id,
                         "reply_content" : item2.reply_content,
                         "reply_time" : item2.reply_time};
             replyList.push(reply);
@@ -576,15 +577,39 @@ router.post('/', isLoggedIn, function (req, res, next) {
                     "VALUES (?, ?, ?, ?)";
                   connection.query(sql2, [post_id, location, modifiedFilename, originalFilename], function (err, result) {
                     if (err) {
-                      connection.rollback();
+
                       connection.release();
                       err.code = "E00005";
                       err.message = "게시물 파일 업로드가 실패하였습니다.";
                       callback(err);
                     } else {
-                        connection.commit();
-                        connection.release();
-                        callback(null);
+
+                      var hash_tag = req.body.tag;
+                      var tags = ['의자', '화장대', '책상'];
+
+                      console.log('태그2' +tags[0]);
+                      async.each(tags, function(item, cb){
+                        var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) "+
+                                  "VALUES ((SELECT id FROM hashtag "+
+                                  "WHERE tag=?),?)";
+                        connection.query(sql, [item, post_id], function(err, result) {
+                          if (err) {
+                            console.log('휴');
+                            callback(err);
+                          } else {
+                            callback(null);
+                          }
+                        })
+                      }, function(err) {
+                        if (err) {
+                          callback(err);
+                        } else {
+                          console.log('태그' + hash_tag);
+                          console.log('태그' + post_id);
+                          callback(null);
+                        }
+                      })
+
                     }
                   });
                 }
@@ -594,6 +619,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
 
       })
     }
+
 
 
     async.waterfall([getConnection, uploadPhoto], function (err, result) {
@@ -1029,10 +1055,7 @@ router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
         err.message = "댓글을 등록할 수 없습니다.";
         callback(err);
       } else {
-        callback(null, {
-          "message": "댓글이 등록되었습니다."
-
-        });
+        callback(null);
       }
     })
   }
@@ -1043,6 +1066,11 @@ router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
     } else {
       request.get({url:'http://localhost/replypushes/'+pid}, function(err, httpResponse, body){
         console.log(body);
+        var result = {
+          "result": {
+            "message": "댓글이 등록되었습니다."
+          }
+        };
         res.json(result);
       });
     }
