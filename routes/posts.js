@@ -11,6 +11,7 @@ var request = require('request');
 
 //게시물 목록 조회
 router.get('/', function (req, res, next) {
+  var user = req.user;
   function getConnection(callback) {
     pool.getConnection(function (err, connection) {
       if (err) {
@@ -50,11 +51,12 @@ router.get('/', function (req, res, next) {
 
     function resultJSON(connection, post_results, callback) {
       var interiorList = [];
+      var state=0;
       async.each(post_results, function (item, cb) {
         var hashtag = "SELECT h.tag " +
-          "FROM hashtag_has_post hp LEFT JOIN hashtag h ON (h.id = hp.hashtag_id) " +
-          "LEFT JOIN post p on(p.id = hp.post_id) " +
-          "WHERE p.id = ? ";
+                      "FROM hashtag_has_post hp LEFT JOIN hashtag h ON (h.id = hp.hashtag_id) " +
+                      "LEFT JOIN post p on(p.id = hp.post_id) " +
+                      "WHERE p.id = ? ";
 
         connection.query(hashtag, [item.id], function (err, hashtags) {
           if (err) {
@@ -63,22 +65,40 @@ router.get('/', function (req, res, next) {
           } else {
             var tagList = [];
             async.each(hashtags, function (tags, cb2) {
-
                 tagList.push(tags.tag);
               cb2(null);
             }, function (err) {
               if (err) {
                 cb(err);
               } else {
-                var postresult = {
-                  "post_id": item.id,
-                  "file_url": item.file_path,
-                  "scrap_count": item.scrap,
-                  "hash_tag": tagList,
-                  "category": item.category
-                };
-                interiorList.push(postresult);
-                cb(null);
+                console.log("statesql====>"+ state);
+                var statesql = "SELECT * "+
+                               "FROM state "+
+                               "WHERE post_id=? and user_id=?";
+                connection.query(statesql, [item.id, user.id], function (err, states) {
+                  if (err) {
+                   connection.release();
+                    var err = new Error("state err 발생");
+                    err.code = "E00003";
+                    callback(err);
+                  } else {
+                    if (states.length) {
+                      state = 1;
+                    } else {
+                      state = 0;
+                    }
+                    var postresult = {
+                      "post_id": item.id,
+                      "file_url": item.file_path,
+                      "scrap_count": item.scrap,
+                      "hash_tag": tagList,
+                      "category": item.category,
+                      "state": state
+                    };
+                    interiorList.push(postresult);
+                    cb(null);
+                  }
+                });
               }
             });
           }
@@ -138,6 +158,7 @@ router.get('/', function (req, res, next) {
 
     function resultJSON2(connection, community_results, callback) {
       var communityList = [];
+      var state = 0;
       async.each(community_results, function (item, cb) {
         var hashtag = "SELECT h.tag " +
           "FROM hashtag_has_post hp LEFT JOIN hashtag h ON (h.id = hp.hashtag_id) " +
@@ -156,16 +177,34 @@ router.get('/', function (req, res, next) {
               if (err) {
                 cb(err);
               } else {
-                var postresult = {
-                  "post_id": item.id,
-                  "username": item.username,
-                  "photo_url": item.photo_path,
-                  "file_url": item.file_path,
-                  "scrap_count": item.scrap,
-                  "hash_tag": tagList
-                };
-                communityList.push(postresult);
-                cb(null);
+                var statesql = "SELECT * "+
+                              "FROM state "+
+                              "WHERE post_id=? and user_id=?";
+                connection.query(statesql, [item.id, user.id], function (err, states) {
+                  if (err) {
+                      connection.release();
+                      var err = new Error("state err 발생");
+                      err.code = "E00003";
+                      callback(err);
+                  } else {
+                    if (states.length) {
+                      state = 1;
+                    } else {
+                      state = 0;
+                    }
+                    var postresult = {
+                      "post_id": item.id,
+                      "username": item.username,
+                      "photo_url": item.photo_path,
+                      "file_url": item.file_path,
+                      "scrap_count": item.scrap,
+                      "hash_tag": tagList,
+                      "state": state
+                    };
+                    communityList.push(postresult);
+                    cb(null);
+                  }
+                });
               }
             });
           }
@@ -370,7 +409,7 @@ router.get('/:post_id', function (req, res, next) {
           callback(err);
         } else {
           async.each(tags,function(tag, cb){
-            tagList.push(tag.tag)
+            tagList.push(tag.tag);
             cb(null);
 
           }, function(err){
@@ -953,84 +992,7 @@ router.delete('/:post_id',isLoggedIn, function (req, res, next) {
 
 
 });
-//    // 사진 하나올렸을 때, (커뮤니티 게시글)
-//
-//      // 기존 파일 삭제
-//      function deletePhoto(connection, callback) {
-//        var sql = "SELECT p.id, file_path, file_name, original_name " +
-//          "FROM post p LEFT JOIN file fi on(p.id = fi.post_id) " +
-//          "WHERE p.user_id = ? and p.id=?";
-//        connection.query(sql, [user.id, postId], function (err, photo_exit) {
-//          if (err) {
-//            callback(err);
-//          } else {
-//            console.log("게시물아이디" +postId);
-//            console.log("사용자아이디" +user.id);
-//            //console.log('====photo_exit[0].file_name :' + photo_exit[0].file_name);
-//            if (photo_exit.length === 0) {  // 파일이 없을 때
-//              console.log('사진이 존재하지 않습니다');
-//              callback(null, connection);
-//            } else {   // 파일이 들어 있을 때
-//              console.log('사진이 존재해서 이제 삭제할꺼예요');
-//              var s3 = new AWS.S3({
-//                "accessKeyId": s3Config.key,
-//                "secretAccessKey": s3Config.secret,
-//                "region": s3Config.region,
-//                "params": {
-//                  "Bucket": s3Config.bucket,
-//                  "Key": s3Config.posts.imageDir + "/" + photo_exit[0].file_name,
-//                  "ACL": s3Config.imageACL,
-//                  "ContentType": mimeType
-//                }
-//              });
-//              s3.deleteObject(s3.params, function (err, data) {
-//                if (err) {
-//                  connection.release();
-//                  console.log(err, err.stack)
-//                } else {
-//                  console.log(data);
-//                  // db에서 삭제
-//                  var deletesql = "DELETE FROM bangdb.file "+
-//                                "WHERE post_id=?";
-//                  connection.query(deletesql, [postId], function (err, deleteResult) {
-//                    if (err) {
-//                      callback(err);
-//                    } else {
-//                      var sql ="DELETE from post " +
-//                        "WHERE id = ? ";
-//                      connection.query(sql, [postId], function (err, result) {
-//                        connection.release();
-//                        if (err) {
-//                          callback(err);
-//                        } else {
-//                          callback(null);
-//                        }
-//                      })
-//
-//                      console.log("===디비에서 파일 삭제함!!");
-//
-//                    }
-//                  });
-//                }
-//              })
-//            }
-//          }
-//        })
-//      } // deletePhoto
-//
-//      async.waterfall([getConnection, deletePhoto], function (err, result) {
-//        if (err) {
-//          next(err);
-//        } else {
-//          var result = {"result" : {"message" : "게시물이 삭제되었습니다." }}
-//          res.json(result);
-//        }
-//      }); // async.waterfall
-//
-//  });   // form.parse
-//
-//
-//});
+
 
 //댓글 등록
 router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
