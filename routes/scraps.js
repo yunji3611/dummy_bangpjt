@@ -137,36 +137,37 @@ router.post('/', isLoggedIn, function (req, res, next) {
         })
     }
 
-    //function selectScrap(connection, callback) {
-    //    var sql = "SELECT post_id " +
-    //        "FROM bangdb.scrap " +
-    //        "WHERE user_id = ? and post_id = ?";
-    //    connection.query(sql, [user.id, postId], function (err, post) {
-    //        if (post.length) {
-    //            err.message = "이미 스크랩되었습니다";
-    //            err.code = "E00007";
-    //            err.status = 409;
-    //            callback(err);
-    //        } else {
-    //            callback(null, connection);
-    //        }
-    //    });
-    //}
-
     function insertScrap(connection, callback) {
         var sql = "INSERT INTO bangdb.scrap(user_id, post_id) " +
             "VALUES (?, ?)";
         connection.query(sql, [user.id, postId], function (err, post) {
-            connection.release();
             if (err) {
+                connection.release();
+                var err = new Error("scrap insert 에러");
+                err.code = "E00007";
                 callback(err);
             } else {
-                callback(null, post);
+                callback(null, connection);
             }
         })
     }
 
-    async.waterfall([getConnection, insertScrap], function (err, post) {
+    function insertState(connection, callback) {
+        var sql = "INSERT INTO state(post_id, user_id) "+
+                  "VALUES (?, ?)";
+        connection.query(sql, [postId, user.id], function (err, state) {
+            connection.release();
+            if (err) {
+                var err = new Error("state insert 에러");
+                err.code = "E00007";
+                callback(err);
+            } else {
+                callback(null);
+            }
+        })
+    }
+
+    async.waterfall([getConnection, insertScrap, insertState], function (err) {
         if (err) {
             // err.code = "E00007";
             next(err);
@@ -198,10 +199,25 @@ router.delete('/', isLoggedIn, function(req, res, next) {
         var sql = "DELETE FROM bangdb.scrap "+
                   "WHERE user_id=? and post_id=?";
         connection.query(sql, [user.id, postId], function(err) {
-            connection.release();
             if (err) {
+                connection.release();
                 var err = new Error("스크랩 삭제 에러");
                 err.code = "E00006";
+                callback(err);
+            } else {
+                callback(null, connection);
+            }
+        })
+    }
+
+    function deletetState(connection, callback) {
+        var sql = "DELETE FROM bangdb.state "+
+                  "WHERE user_id=? and post_id=?";
+        connection.query(sql, [user.id, postId], function (err, state) {
+            connection.release();
+            if (err) {
+                var err = new Error("state insert 에러");
+                err.code = "E00007";
                 callback(err);
             } else {
                 callback(null);
@@ -209,12 +225,12 @@ router.delete('/', isLoggedIn, function(req, res, next) {
         })
     }
 
-    async.waterfall([getConnection, deleteScrap], function (err, result) {
+    async.waterfall([getConnection, deleteScrap, deletetState], function (err) {
         if (err) {
             callback(err);
         } else {
             res.json({
-                "result": "스크랩이 취소되었습니다"
+                "result": {"message": "스크랩이 취소되었습니다"}
             })
         }
     })
