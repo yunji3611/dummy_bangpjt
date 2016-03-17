@@ -39,7 +39,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
                 "FROM bangdb.scrap s LEFT JOIN bangdb.post p on (s.post_id = p.id) " +
                 "LEFT JOIN bangdb.file fi on(p.id = fi.post_id) " +
                 "LEFT JOIN bangdb.hashtag_has_post hp on(p.id = hp.post_id) " +
-                "LEFT JOIN bangdb.user u on (u.id = s.user_id) " +
+                "LEFT JOIN bangdb.user u on (u.id = p.user_id) " +
                 "WHERE s.user_id = ? " +
                 "GROUP BY p.id " +
                 "LIMIT ? OFFSET ? ";

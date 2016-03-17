@@ -52,7 +52,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
         }
 
         function insertOrder(connection, callback) {
-            var sql = "INSERT INTO bangdb.orders(user_id, post_id, rental_starttime, rental_endtime, address, phone, paymethod, month_price) " +
+            var sql = "INSERT INTO bangdb.orders(user_id, post_id, rental_start, rental_end, address, phone, paymethod, month_price) " +
                       "VALUES (" + connection.escape(user.id) + ", " + connection.escape(postId) + ", " +
                               " DATE_ADD(utc_timestamp(), INTERVAL 1 week), DATE_ADD(utc_timestamp(), INTERVAL " + connection.escape(period) + " month), " +
                               " aes_encrypt( " + connection.escape(address) + ", unhex(" + connection.escape(hexkey) + "))," +
