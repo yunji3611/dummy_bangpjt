@@ -210,7 +210,7 @@ router.put('/', isLoggedIn, function (req, res, next) {
                         "result": {
                             "message": "프로필 사진 변경이 완료되었습니다"
                         }
-                    });
+                    });//
                 }
             }); // async.waterfall
         });
