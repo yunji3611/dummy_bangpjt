@@ -35,7 +35,7 @@ router.get('/', isLoggedIn, function (req, res, next) {
     }
 
     function selectScrap(connection, callback) {
-        var sql = "SELECT p.id as id, fi.file_path, u.photo_path " +
+        var sql = "SELECT p.id as id, p.category, fi.file_path, u.photo_path " +
                 "FROM bangdb.scrap s LEFT JOIN bangdb.post p on (s.post_id = p.id) " +
                 "LEFT JOIN bangdb.file fi on(p.id = fi.post_id) " +
                 "LEFT JOIN bangdb.hashtag_has_post hp on(p.id = hp.post_id) " +
@@ -80,7 +80,8 @@ router.get('/', isLoggedIn, function (req, res, next) {
                                 "post_id": scrap.id,
                                 "photo_url": scrap.photo_path,
                                 "file_url": scrap.file_path,
-                                "hash_tag": tagList
+                                "hash_tag": tagList,
+                                "category": scrap.category
                             };
                             index++;
                             postList.push(posts);
