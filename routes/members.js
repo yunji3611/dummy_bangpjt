@@ -151,7 +151,9 @@ router.post('/facebook/token', function (req, res, next) {
                         next(err);
                     } else {
                         res.json({
-                            "result": {"message": "페이스북 로그인 되었습니다"}
+                            "result": {
+                                "message": "페이스북 로그인 되었습니다",
+                                "id": req.user.id}
                         });
                         // res.json(user);
                     }

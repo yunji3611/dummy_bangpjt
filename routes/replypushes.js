@@ -56,7 +56,7 @@ router.get('/:pid', function (req, res, next) {
             }
         });
 
-        var server_access_key = "AIzaSyCTqs_tFwUjY-HUEj_tM01nH7Yfg4uBlVE";
+        var server_access_key = "AIzaSyAlgqej6nnBzv91WzphZy3EkfG9OLAHs9o"; //"AIzaSyCTqs_tFwUjY-HUEj_tM01nH7Yfg4uBlVE";
         var sender = new gcm.Sender(server_access_key);
         var registrationIds = [];
         var registration_id = key[0].registration_token;
