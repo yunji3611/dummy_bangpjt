@@ -23,10 +23,10 @@ router.get('/:orderId', function (req, res, next) {
 
     function selectKey(connection, callback) {
         console.log('orderId===>'+reqPost);
-        var sql = "SELECT user_id, registration_token " +
-                          "year(rental_endtime) as year, month(rental_endtime) as month, day(rental_endtime) as day "+
+        var sql = "SELECT o.id as oid, user_id, registration_token, " +
+                   "year(rental_end) as year, month(rental_end) as month, day(rental_end) as day "+
                    "FROM bangdb.orders o LEFT JOIN bangdb.user u ON (o.user_id = u.id) "+
-                   "WHERE user_id = ?";
+                   "WHERE o.id =?";
         connection.query(sql, [reqPost], function (err, order) {
             connection.release();
             if (err) {
