@@ -568,10 +568,27 @@ router.post('/', isLoggedIn, function (req, res, next) {
     form.uploadDir = path.join(__dirname, '../uploads');
     form.keepExtensions = true;
 
+    var formFields = {};
+
+    form.on('field', function(name, value) {
+      if (!formFields[name]) {
+        formFields[name] = value;
+      } else {
+        if (formFields[name] instanceof Array) { // 배열일 경우
+          formFields[name].push(value);
+        } else { // 배열이 아닐 경우
+          var tmp = formFields[name];
+          formFields[name] = [];
+          formFields[name].push(tmp);
+          formFields[name].push(value);
+        }
+      }
+    });
+
     form.parse(req, function (err, fields, files) {
       var file = files['photo'];
       console.log("파일의 내용 " + file.name);
-      console.log("필드의 내용 " + fields);
+      console.log("필드의 내용 " + formFields);
       var mimeType = mime.lookup(path.basename(file.path));
       var s3 = new AWS.S3({
         "accessKeyId": s3Config.key,
@@ -602,74 +619,87 @@ router.post('/', isLoggedIn, function (req, res, next) {
             fs.unlink(file.path, function () {
               console.log(files['photo'].path + " 파일이 삭제되었습니다...");
             });
-            var sql = "insert into post (content, user_id) " +
-              "values (?, ?)";
-            connection.query(sql, [fields['content'], user.id], function (err, result) {
+            connection.beginTransaction(function (err) {
               if (err) {
-                //connection.rollback();
-                err.code = "E00005";
-                err.message = "게시물 등록이 실패하였습니다.";
                 connection.release();
                 callback(err);
               } else {
-                var post_id = result.insertId;
-                console.log("포스트" + post_id);
-                var sql2 = "INSERT INTO file(post_id, file_path, file_name, original_name) " +
-                  "VALUES (?, ?, ?, ?)";
-                connection.query(sql2, [post_id, location, modifiedFilename, originalFilename], function (err, result) {
+                var sql = "insert into post (content, user_id) " +
+                  "values (?, ?)";
+                connection.query(sql, [formFields['content'], user.id], function (err, result) {
                   if (err) {
-
-                    connection.release();
+                    connection.rollback();
                     err.code = "E00005";
-                    err.message = "게시물 파일 업로드가 실패하였습니다.";
+                    err.message = "게시물 등록이 실패하였습니다.";
+                    connection.release();
                     callback(err);
                   } else {
+                    var post_id = result.insertId;
+                    console.log("포스트" + post_id);
+                    var sql2 = "INSERT INTO file(post_id, file_path, file_name, original_name) " +
+                      "VALUES (?, ?, ?, ?)";
+                    connection.query(sql2, [post_id, location, modifiedFilename, originalFilename], function (err, result) {
+                      if (err) {
+                        connection.rollback();
+                        connection.release();
+                        err.code = "E00005";
+                        err.message = "게시물 파일 업로드가 실패하였습니다.";
+                        callback(err);
+                      } else {
 
-                     var hash_tag = [];
-                    hash_tag = fields['tag'].split(',');
+                        var hash_tag = formFields['tag'];
+                        console.log('짠2' + hash_tag);
 
-
-                    console.log('짠' + fields.tag);
-                    console.log('짠2' + hash_tag);
-
-                    async.each(hash_tag, function (item, cb) {
-                      var tagid = "SELECT id FROM hashtag " +
-                        "WHERE tag=?";
-                      connection.query(tagid, [item], function (err, tags) {
-                        if (err) {
-                          connection.release();
-                          cb(err);
-                        } else {
-                          async.each(tags, function (tag, cb) {
-                            var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) " +
-                              "VALUES (?,?) ";
-                            connection.query(sql, [tag, post_id], function (err, result) {
-                              if (err) {
-                                cb(err);
-                              } else {
-                                cb(null);
-                              }
-                            })
-                          }, function (err) {
+                        async.each(hash_tag, function (item, cb) {
+                          var tagid = "SELECT id FROM hashtag " +
+                            "WHERE tag=?";
+                          connection.query(tagid, [item], function (err, tags) {
                             if (err) {
-                              callback(err);
+                              connection.rollback();
+                              connection.release();
+                              cb(err);
                             } else {
-                              callback(null);
+                              var taglist = [];
+                              taglist.push(tags[0].id);
+                              console.log(taglist);
+                              console.log('???'+item) ;
+                              console.log('???'+tags) ;
+
+                              var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) " +
+                                "VALUES (?,?) ";
+                              connection.query(sql, [taglist, post_id], function (err, result) {
+                                if (err) {
+                                  connection.rollback();
+                                  connection.release();
+                                  console.log('왜안대' +taglist[0]);
+                                  callback(err);
+                                } else {
+                                  connection.commit();
+                                  //connection.release();
+                                  callback(null);
+                                }
+                              })
+
                             }
+
                           })
-                        }
+                        }, function (err) {
+                          if (err) {
+                            callback(err);
+                          } else {
+                            callback(null);
+                          }
+                        })
+                      }
 
-                      })
-                    })
 
-                    //callback(null, connection, post_id);
+                      //}//else
+                    });
                   }
-
-
-                  //}//else
                 });
               }
-            });
+            })
+
           }
         });
 
@@ -677,6 +707,26 @@ router.post('/', isLoggedIn, function (req, res, next) {
 
 
   }
+
+  //function insertTags(connection, tags, post_id, callback) {
+  //  async.each(tags, function (tag, cb) {
+  //    var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) " +
+  //      "VALUES (?,?) ";
+  //    connection.query(sql, [tag, post_id], function (err, result) {
+  //      if (err) {
+  //        cb(err);
+  //      } else {
+  //        cb(null);
+  //      }
+  //    })
+  //  }, function (err) {
+  //    if (err) {
+  //      callback(err);
+  //    } else {
+  //      callback(null);
+  //    }
+  //  })
+  //}
 
   //function selectTags(connection, post_id, callback) {
   //  var hash_tag = fields['tag'];
