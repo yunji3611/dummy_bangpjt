@@ -61,12 +61,11 @@ router.get('/', function (req, res, next) {
           } else {
             var tagList = [];
             async.each(hashtags, function (tags, cb2) {
-
               tagList.push(tags.tag);
               cb2(null);
             }, function (err) {
-              connection.release();
               if (err) {
+                connection.release();
                 cb(err);
               } else {
                 var postresult = {
@@ -89,7 +88,6 @@ router.get('/', function (req, res, next) {
         })
 
       }, function (err) {
-        connection.release();
         if (err) {
           err.code = "E00003";
           err.message = "검색한 게시물 조회가 실패하였습니다.";
