@@ -206,7 +206,11 @@ router.put('/', isLoggedIn, function (req, res, next) {
                 if (err) {
                     next(err);
                 } else {
-                    res.json('프로필 사진 변경이 완료되었습니다');
+                    res.json({
+                        "result": {
+                            "message": "프로필 사진 변경이 완료되었습니다"
+                        }
+                    });
                 }
             }); // async.waterfall
         });
