@@ -772,7 +772,9 @@ router.post('/', isLoggedIn, function (req, res, next) {
       next(err);
     } else {
       var result = {
-        "message": "게시물이 등록되었습니다."
+        "result": {
+          "message": "게시물이 등록되었습니다."
+        }
       }
       res.json(result);
     }
