@@ -17,7 +17,7 @@ router.get('/', function (req, res, next) {
   var page = parseInt(req.query.page);
   page = isNaN(page) ? 1 : page;
 
-  console.log('tag:', tag); //
+  console.log('tag:', tag);
   console.log(page);
 
   var limit = 10;
