@@ -619,11 +619,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
             fs.unlink(file.path, function () {
               console.log(files['photo'].path + " 파일이 삭제되었습니다...");
             });
-            connection.beginTransaction(function (err) {
-              if (err) {
-                connection.release();
-                callback(err);
-              } else {
+
                 var sql = "insert into post (content, user_id) " +
                   "values (?, ?)";
                 connection.query(sql, [formFields['content'], user.id], function (err, result) {
@@ -697,8 +693,8 @@ router.post('/', isLoggedIn, function (req, res, next) {
                     });
                   }
                 });
-              }
-            })
+
+
 
           }
         });
@@ -772,9 +768,8 @@ router.post('/', isLoggedIn, function (req, res, next) {
       next(err);
     } else {
       var result = {
-        "result": {
-          "message": "게시물이 등록되었습니다."
-        }
+        "result" :{"message": "게시물이 등록되었습니다."}
+
       }
       res.json(result);
     }
