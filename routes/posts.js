@@ -685,8 +685,6 @@ router.post('/', isLoggedIn, function (req, res, next) {
                                   connection.release();
                                   cb(err);
                                 } else {
-                                  //console.log('ㅁㅁ'+post_id);
-                                  //console.log('ㅁㅁ'+item.id);
                                   cb(null);
                                 }
                               })
@@ -717,7 +715,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
       var result = {
         "result" :{"message": "게시물이 등록되었습니다."}
 
-      }
+      };
       res.json(result);
     }
   });
@@ -729,7 +727,6 @@ router.post('/', isLoggedIn, function (req, res, next) {
 //게시물 수정
 router.put('/:post_id', isLoggedIn, function (req, res, next) {
 
-
   var postId = req.params.post_id;
   console.log('========postId========??' + postId);
   var form = new formidable.IncomingForm();
@@ -738,7 +735,37 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
   form.multiples = true;
   form.maxFieldsSize = 2 * 1024 * 1024;
 
-  console.log('==========form.parse들어간당==========');
+  var formFields = {};
+
+  //
+  form.on('field', function(name, value) {
+
+    function makeFormFields(prop, val) {
+      if (!formFields[prop]) {
+        formFields[prop] = val;
+      } else {
+        if (formFields[prop] instanceof Array) { // 배열일 경우
+          formFields[prop].push(val);
+        } else { // 배열이 아닐 경우
+          var tmp = formFields[prop];
+          formFields[prop] = [];
+          formFields[prop].push(tmp);
+          formFields[prop].push(val);
+        }
+      }//
+    }
+
+    var re1 = /\[\]/;
+    var re2 = /\[\d+\]/;
+    if (name.match(re1)) {
+      name = name.replace(re1, '');
+    } else if (name.match(/\[\d+\]/)) {
+      name = name.replace(re2, '');
+    }
+    makeFormFields(name, value);
+  });
+  //
+
   form.parse(req, function (err, fields, files) {
     console.log('==========form.parse들어간왔당==========누가????' + req.user.id);
     var user = req.user;
@@ -799,7 +826,7 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
                 console.log(data);
                 // db에서 삭제
                 var deletesql = "DELETE FROM bangdb.file " +
-                  "WHERE post_id=?";
+                                "WHERE post_id=?";
                 connection.query(deletesql, [postId], function (err, deleteResult) {
                   if (err) {
                     callback(err);
@@ -813,6 +840,22 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
         }
       })
     } // deletePhoto
+
+    function deleteTags(connection, callback) {
+        var sql = "DELETE FROM hashtag_has_post " +
+                  "WHERE post_id = ? ";
+        connection.query(sql, [postId], function (err) {
+          if (err) {
+            err.code = "E00006";
+            err.message = "태그를 삭제할 수 없습니다.";
+            connection.release();
+            callback(err);
+          } else {
+            callback(null, connection);
+          }
+        });
+
+    }
 
     // 사진 insert
     function upDatePhoto(connection, callback) {
@@ -862,14 +905,48 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
                   var contentsql = "UPDATE bangdb.post " +
                     "SET content = ? " +
                     "WHERE id=? and user_id=?";
-                  connection.query(contentsql, [content, postId, user.id], function (err, result) {
-                    connection.release();
+                  connection.query(contentsql, [content, postId, user.id], function (err) {
                     if (err) {
+                      connection.release();
                       err.code = "E00004";
                       err.message = "게시물을 수정할 수 없습니다.";
                       callback(err);
                     } else {
-                      callback(null);
+                      var hash_tag = formFields['tag'];
+                      console.log('짠2' + (hash_tag instanceof Array));
+                      console.log('태그' +hash_tag);
+
+                      var tagid = "SELECT id FROM hashtag " +
+                          "WHERE tag in(?)";
+                      connection.query(tagid, [hash_tag], function (err, tags) {
+                        if (err) {
+                          connection.rollback();
+                          connection.release();
+                          callback(err);
+                        } else {
+                          async.eachSeries(tags, function(item, cb){
+                            var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) " +
+                                "VALUES (?,?) ";
+                            connection.query(sql, [item.id, postId], function(err) {
+                              if (err) {
+                                connection.release();
+                                cb(err);
+                              } else {
+                                cb(null);
+                              }
+                            })
+
+                          }, function(err) {
+                            connection.release();
+                            if (err) {
+                              callback(err);
+                            } else {
+                              callback(null);
+                            }
+                          })
+                        }
+                      });
+
                     }
                   })
                 } // content Update
@@ -879,7 +956,7 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
         }); //  .send
     } // upDatePhoto
 
-    async.waterfall([getConnection, deletePhoto, upDatePhoto], function (err, result) {
+    async.waterfall([getConnection, deletePhoto, deleteTags, upDatePhoto], function (err, result) {
       if (err) {
         next(err);
       } else {
@@ -1097,7 +1174,7 @@ router.delete('/:post_id', isLoggedIn, function (req, res, next) {
       if (err) {
         next(err);
       } else {
-        var result = {"result": {"message": "게시물이 삭제되었습니다."}}
+        var result = {"result": {"message": "게시물이 삭제되었습니다."}};
         res.json(result);
       }
     }); // async.waterfall
