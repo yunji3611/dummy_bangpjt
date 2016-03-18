@@ -564,6 +564,9 @@ router.post('/', isLoggedIn, function (req, res, next) {
   var user = req.user;
 
   function uploadPhoto(connection, callback) {
+    console.log('바디바디바디바디' +req.body);
+
+
     var form = new formidable.IncomingForm();
     form.uploadDir = path.join(__dirname, '../uploads');
     form.keepExtensions = true;
@@ -643,9 +646,10 @@ router.post('/', isLoggedIn, function (req, res, next) {
                         callback(err);
                       } else {
 
+
                         var hash_tag = formFields['tag'];
                         console.log('짠2' + (hash_tag instanceof Array));
-                        console.log('dddd' +hash_tag);
+                        console.log('태그' +hash_tag);
 
                         var tagid = "SELECT id FROM hashtag " +
                           "WHERE tag in(?)";
@@ -655,7 +659,10 @@ router.post('/', isLoggedIn, function (req, res, next) {
                             connection.release();
                             callback(err);
                           } else {
-
+                            //console.log('태그' +tags);
+                            //console.log('태그' +tags[1].id);
+                            //console.log('태그' +tags[2].id);
+                            //console.log('태그' +tags[0].id);
                             async.eachSeries(tags, function(item, cb){
                             var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) " +
                               "VALUES (?,?) ";
@@ -664,6 +671,8 @@ router.post('/', isLoggedIn, function (req, res, next) {
                                   connection.release();
                                   cb(err);
                                 } else {
+                                  //console.log('ㅁㅁ'+post_id);
+                                  //console.log('ㅁㅁ'+item.id);
                                   cb(null);
                                 }
                               })
