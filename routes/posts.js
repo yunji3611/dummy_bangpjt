@@ -590,7 +590,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
             formFields[prop].push(tmp);
             formFields[prop].push(val);
           }
-        }
+        }//
       }
 
       var re1 = /\[\]/;
