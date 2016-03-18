@@ -3,6 +3,7 @@ var bcrypt = require('bcrypt');
 var async = require('async');
 var passport = require('passport');
 var hexkey =  process.env.HEX_KEY;
+var logger = require('../config/winstonconfig');
 
 var router = express.Router();
 
@@ -35,6 +36,7 @@ router.post('/', function (req, res, next) {
                     callback(err);
                 } else {
                     if (members.length) {
+                        logger.log('debug', members);
                         var err = new Error('아이디 중복!!');
                         err.status = 409;
                         err.code = "E00001";

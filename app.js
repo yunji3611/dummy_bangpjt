@@ -25,6 +25,8 @@ var tags = require('./routes/tags');
 var mainpages = require('./routes/mainpages');
 var keywords = require('./routes/keywords');
 
+var winlogger = require('./config/winstonconfig');
+
 var app = express();
 app.set('env', 'development');
 
@@ -76,6 +78,8 @@ app.use(function(req, res, next) {
 // will print stacktrace
 if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
+
+      winlogger.log('error', err);
     res.status(err.status || 500);
     res.json({
         "error" : {

@@ -1152,7 +1152,7 @@ router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
     if (err) {
       next(err);
     } else {
-      request.get({url: 'http://localhost/replypushes/' + pid}, function (err, httpResponse, body) {
+      request.get({url: 'http://ec2-52-79-116-69.ap-northeast-2.compute.amazonaws.com/replypushes/' + pid}, function (err, httpResponse, body) {
         console.log(body);
         var result = {
           "result": {

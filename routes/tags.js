@@ -27,14 +27,14 @@ router.get('/', function (req, res, next) {
 
     function selectPosts(connection, callback) {
       var post1 = "SELECT p.id, f.file_path, u.username, u.photo_path, h.tag, count(s.post_id) as scrap, p.category, p.content " +
-        "FROM post p LEFT JOIN file f ON(f.post_id = p.id) " +
-        "LEFT JOIN scrap s ON(s.post_id = p.id) " +
-        "LEFT JOIN user u ON(u.id = p.user_id) " +
-        "LEFT JOIN hashtag_has_post hp ON(p.id = hp.post_id) " +
-        "LEFT JOIN hashtag h ON(h.id=hp.hashtag_id) " +
-        "WHERE h.tag like '%" + tag + "%' " +//'% tag %'
-        "GROUP BY p.id " +
-        "LIMIT ? OFFSET ?";
+          "FROM post p LEFT JOIN file f ON(f.post_id = p.id) " +
+          "LEFT JOIN scrap s ON(s.post_id = p.id) " +
+          "LEFT JOIN user u ON(u.id = p.user_id) " +
+          "LEFT JOIN hashtag_has_post hp ON(p.id = hp.post_id) " +
+          "LEFT JOIN hashtag h ON(h.id=hp.hashtag_id) " +
+          "WHERE h.tag like '%" + tag + "%' " +//'% tag %'
+          "GROUP BY p.id " +
+          "LIMIT ? OFFSET ?";
       connection.query(post1, [limit, offset], function (err, posts) {
         if (err) {
           callback(err);
@@ -51,9 +51,9 @@ router.get('/', function (req, res, next) {
       var postlist = [];
       async.each(posts, function (item, cb) {
         var hashtag = "SELECT h.tag " +
-          "FROM hashtag_has_post hp LEFT JOIN hashtag h ON (h.id = hp.hashtag_id) " +
-          "LEFT JOIN post p on(p.id = hp.post_id) " +
-          "WHERE p.id = ? ";
+            "FROM hashtag_has_post hp LEFT JOIN hashtag h ON (h.id = hp.hashtag_id) " +
+            "LEFT JOIN post p on(p.id = hp.post_id) " +
+            "WHERE p.id = ? ";
         connection.query(hashtag, [item.id], function (err, hashtags) {
           if (err) {
             connection.release();
@@ -70,14 +70,14 @@ router.get('/', function (req, res, next) {
               } else {
                 var postresult = {
 
-                    "post_id": item.id,
-                    "username" :item.username,
-                    "photo_url" :item.photo_path,
-                    "file_url": item.file_path,
-                    "scrap_count": item.scrap,
-                    "hash_tag": tagList,
-                    "category": item.category,
-                    "content": item.content
+                  "post_id": item.id,
+                  "username" :item.username,
+                  "photo_url" :item.photo_path,
+                  "file_url": item.file_path,
+                  "scrap_count": item.scrap,
+                  "hash_tag": tagList,
+                  "category": item.category,
+                  "content": item.content
 
                 };
                 postlist.push(postresult);
@@ -120,4 +120,4 @@ router.get('/', function (req, res, next) {
   }
 });
 
-    module.exports = router;
+module.exports = router;
