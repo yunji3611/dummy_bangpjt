@@ -659,7 +659,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
                             console.log('태그즈' +tags[1].id);
                             console.log('태그즈' +tags[2].id);
 
-                            async.each(tags, function(item, cb){
+                            async.eachSeries(tags, function(item, cb){
                             var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) " +
                               "VALUES (?,?) ";
                               connection.query(sql, [item.id, post_id], function(err, result) {
