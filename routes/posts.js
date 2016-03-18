@@ -564,25 +564,43 @@ router.post('/', isLoggedIn, function (req, res, next) {
   var user = req.user;
 
   function uploadPhoto(connection, callback) {
+
+
     var form = new formidable.IncomingForm();
     form.uploadDir = path.join(__dirname, '../uploads');
     form.keepExtensions = true;
 
     var formFields = {};
 
+    // tag[0] = '의자', tag[1] = '러그'
+    // tag[] = '의자', tag[] = '러그'
+    // tag = '의자', tag = '러그'
+
     form.on('field', function(name, value) {
-      if (!formFields[name]) {
-        formFields[name] = value;
-      } else {
-        if (formFields[name] instanceof Array) { // 배열일 경우
-          formFields[name].push(value);
-        } else { // 배열이 아닐 경우
-          var tmp = formFields[name];
-          formFields[name] = [];
-          formFields[name].push(tmp);
-          formFields[name].push(value);
+
+      function makeFormFields(prop, val) {
+        if (!formFields[prop]) {
+          formFields[prop] = val;
+        } else {
+          if (formFields[prop] instanceof Array) { // 배열일 경우
+            formFields[prop].push(val);
+          } else { // 배열이 아닐 경우
+            var tmp = formFields[prop];
+            formFields[prop] = [];
+            formFields[prop].push(tmp);
+            formFields[prop].push(val);
+          }
         }
       }
+
+      var re1 = /\[\]/;
+      var re2 = /\[\d+\]/;
+      if (name.match(re1)) {
+        name = name.replace(re1, '');
+      } else if (name.match(/\[\d+\]/)) {
+        name = name.replace(re2, '');
+      }
+      makeFormFields(name, value);
     });
 
     form.parse(req, function (err, fields, files) {
