@@ -645,6 +645,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
 
                         var hash_tag = formFields['tag'];
                         console.log('짠2' + hash_tag);
+                        console.log('dddd' +formFields);
 
                         async.each(hash_tag, function (item, cb) {
                           var tagid = "SELECT id FROM hashtag " +
