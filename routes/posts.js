@@ -644,129 +644,50 @@ router.post('/', isLoggedIn, function (req, res, next) {
                       } else {
 
                         var hash_tag = formFields['tag'];
-                        console.log('짠2' + hash_tag);
+                        console.log('짠2' + (hash_tag instanceof Array));
                         console.log('dddd' +formFields);
-                        var tags = req.body;
-                        console.log('바디' +tags);
 
+                        var tagid = "SELECT id FROM hashtag " +
+                          "WHERE tag in(?)";
+                        connection.query(tagid, [hash_tag], function (err, tags) {
+                          if (err) {
+                            connection.rollback();
+                            connection.release();
+                            callback(err);
+                          } else {
+                            console.log('태그즈' +tags[0].id)
+                            console.log('태그즈' +tags[1].id);
+                            console.log('태그즈' +tags[2].id);
 
-
-                        async.each(hash_tag, function (item, cb) {
-                          var tagid = "SELECT id FROM hashtag " +
-                            "WHERE tag=?";
-                          connection.query(tagid, [item], function (err, tags) {
-                            if (err) {
-                              connection.rollback();
-                              connection.release();
-                              cb(err);
-                            } else {
-                              var taglist = [];
-                              taglist.push(tags[0].id);
-                              console.log(taglist);
-                              console.log('???'+item) ;
-                              console.log('???'+tags) ;
-
-                              var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) " +
-                                "VALUES (?,?) ";
-                              connection.query(sql, [taglist, post_id], function (err, result) {
+                            async.each(tags, function(item, cb){
+                            var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) " +
+                              "VALUES (?,?) ";
+                              connection.query(sql, [item.id, post_id], function(err, result) {
                                 if (err) {
-                                  connection.rollback();
-                                  connection.release();
-                                  console.log('왜안대' +taglist[0]);
-                                  callback(err);
+                                  cb(err);
                                 } else {
-                                  connection.commit();
-                                  //connection.release();
-                                  callback(null);
+                                  cb(null);
                                 }
                               })
 
+                            }, function(err) {
+                              if (err) {
+                              callback(err);
+                            } else {
+                              callback(null);
                             }
-
                           })
-                        }, function (err) {
-                          if (err) {
-                            callback(err);
-                          } else {
-                            callback(null);
                           }
-                        })
-                      }
-
-
-                      //}//else
-                    });
-                  }
-                });
-
-
-
-          }
-        });
+                        });
+                      }//else
+                  })
+                };
+             })
+        };
+        })
 
     })
-
-
   }
-
-  //function insertTags(connection, tags, post_id, callback) {
-  //  async.each(tags, function (tag, cb) {
-  //    var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) " +
-  //      "VALUES (?,?) ";
-  //    connection.query(sql, [tag, post_id], function (err, result) {
-  //      if (err) {
-  //        cb(err);
-  //      } else {
-  //        cb(null);
-  //      }
-  //    })
-  //  }, function (err) {
-  //    if (err) {
-  //      callback(err);
-  //    } else {
-  //      callback(null);
-  //    }
-  //  })
-  //}
-
-  //function selectTags(connection, post_id, callback) {
-  //  var hash_tag = fields['tag'];
-  //  var hash_tag = hash_tag.split(',');
-  //
-  //  console.log('짠' + fields);
-  //  console.log('짠2' + hash_tag);
-  //
-  //  async.each(hash_tag, function (item, cb) {
-  //    var tagid = "SELECT id FROM hashtag " +
-  //      "WHERE tag=?";
-  //    connection.query(tagid, [item], function (err, tags) {
-  //      if (err) {
-  //        connection.release();
-  //        cb(err);
-  //      } else {
-  //        async.each(tags, function (tag, cb) {
-  //          var sql = "INSERT INTO hashtag_has_post(hashtag_id, post_id) " +
-  //            "VALUES (?,?) ";
-  //          connection.query(sql, [tag, post_id], function (err, result) {
-  //            if (err) {
-  //              cb(err);
-  //            } else {
-  //              cb(null);
-  //            }
-  //          })
-  //        }, function (err) {
-  //          if (err) {
-  //            callback(err);
-  //          } else {
-  //            callback(null);
-  //          }
-  //        })
-  //      }
-  //
-  //    })
-  //  })
-  //}
-
 
   async.waterfall([getConnection, uploadPhoto], function (err, result) {
     if (err) {
