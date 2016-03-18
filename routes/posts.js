@@ -661,6 +661,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
                               "VALUES (?,?) ";
                               connection.query(sql, [item.id, post_id], function(err, result) {
                                 if (err) {
+                                  connection.release();
                                   cb(err);
                                 } else {
                                   cb(null);
