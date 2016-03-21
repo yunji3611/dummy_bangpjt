@@ -123,8 +123,12 @@ router.post('/login', function (req, res, next) {
                    } else {
                        console.log("req.user :"+req.user.id);
                        res.json({
-                            "result":{"message": "로그인 되었습니다",
-                                        "id": req.user.id}
+                            "result":{
+                                "message": "로그인 되었습니다",
+                                "id": req.user.id,
+                                "push": req.user.push
+
+                            }
                        });
                        //res.json(user);
 
@@ -155,7 +159,9 @@ router.post('/facebook/token', function (req, res, next) {
                         res.json({
                             "result": {
                                 "message": "페이스북 로그인 되었습니다",
-                                "id": req.user.id}
+                                "id": req.user.id,
+                                "push": req.user.push
+                            }
                         });
                         // res.json(user);
                     }
