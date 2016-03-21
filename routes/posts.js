@@ -891,7 +891,7 @@ router.put('/:post_id', isLoggedIn, function (req, res, next) {
                                     console.log(data);
                                     // db에서 삭제
                                     var deletesql = "DELETE FROM bangdb.file " +
-                                        "WHERE post_id=?";
+                                                    "WHERE post_id=?";
                                     connection.query(deletesql, [postId], function (err, deleteResult) {
                                         if (err) {
                                             callback(err);
