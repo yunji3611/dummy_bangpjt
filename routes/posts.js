@@ -701,12 +701,9 @@ router.post('/', isLoggedIn, function (req, res, next) {
                                     }//else
                                 })
                             }
-                            ;
                         })
                     }
-                    ;
                 })
-
         })
     }
 
@@ -1108,7 +1105,6 @@ router.delete('/:post_id', isLoggedIn, function (req, res, next) {
                                 "WHERE post_id = ? ";
                             connection.query(sql, [postId], function (err, result) {
                                 if (err) {
-                                    console.log('댓글삭제2');
                                     err.code = "E00006";
                                     err.message = "댓글을 삭제할 수 없습니다.";
                                     connection.release();
@@ -1303,15 +1299,25 @@ router.post('/:post_id/replies', isLoggedIn, function (req, res, next) {
         if (err) {
             next(err);
         } else {
-            request.get({url: 'http://ec2-52-79-116-69.ap-northeast-2.compute.amazonaws.com/replypushes/' + pid}, function (err, httpResponse, body) {
-                console.log(body);
+            if (user.push === 1) {
+                request.get({url: 'http://ec2-52-79-116-69.ap-northeast-2.compute.amazonaws.com/replypushes/' + pid}, function (err, httpResponse, body) {
+                    console.log(body);
+                    var result = {
+                        "result": {
+                            "message": "댓글이 등록되었습니다."
+                        }
+                    };
+                    res.json(result);
+                });
+            } else {
                 var result = {
                     "result": {
                         "message": "댓글이 등록되었습니다."
                     }
                 };
                 res.json(result);
-            });
+            }
+
         }
     });
 

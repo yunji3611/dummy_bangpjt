@@ -222,4 +222,43 @@ router.put('/', isLoggedIn, function (req, res, next) {
     }
 });
 
+router.put('/push', isLoggedIn, function (req, res, next) {
+
+    var user = req.user;
+    var push = req.body.push;
+
+   function getConnection(callback) {
+       pool.getConnection(function (err, connection) {
+           if (err) {
+               callback(err)
+           } else {
+               callback(null, connection)
+           }
+       });
+   }
+
+
+    function changPushState(connection, callback){
+        var sql = "UPDATE user SET push = ? "+
+                  "WHERE id = ?";
+        connection.query(sql, [push, user.id], function (err) {
+            connection.release();
+            if (err) {
+                callback(err);
+            } else {
+                callback(null);
+            }
+        })
+    }
+
+    async.waterfall([getConnection, changPushState], function (err) {
+        if (err) {
+            next(err);
+        } else {
+            res.json({result: {message : "푸시 상태가 변경되었습니다"}})
+        }
+    })
+
+});
+
 module.exports = router;

@@ -16,7 +16,7 @@ module.exports = function (passport) {
             if (err) {
                 done(err);
             } else {
-                var sql = "SELECT id, username, email, facebook_id, facebook_token, facebook_name, registration_token  "+
+                var sql = "SELECT id, username, email, facebook_id, facebook_token, facebook_name, registration_token, push  "+
                           "FROM bangdb.user "+
                           "WHERE id = ?";
                 connection.query(sql, [id], function (err, members) {
@@ -28,7 +28,8 @@ module.exports = function (passport) {
                             "id": members[0].id,
                             "username": members[0].username,
                             "email": members[0].email,
-                            "facebook_id": members[0].facebook_id
+                            "facebook_id": members[0].facebook_id,
+                            "push": members[0].push
                         };
                         done(null, user);
                     }
