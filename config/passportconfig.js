@@ -58,7 +58,7 @@ module.exports = function (passport) {
 
 
         function selectUser(connection, callback) {
-            var sql = "SELECT convert(aes_decrypt(email, unhex(" + connection.escape(hexkey) + ")) using utf8) as email, password, registration_token, id "+
+            var sql = "SELECT convert(aes_decrypt(email, unhex(" + connection.escape(hexkey) + ")) using utf8) as email, password, registration_token, id, push "+
                 "FROM bangdb.user "+
                 "WHERE email = aes_encrypt(" + connection.escape(username) + ", unhex(" + connection.escape(hexkey) + ")); ";
             connection.query(sql, function (err, members) {
@@ -74,7 +74,8 @@ module.exports = function (passport) {
                             "id": members[0].id,
                             "email": members[0].email,
                             "hashPassword": members[0].password,
-                            "registration_token": members[0].registration_token
+                            "registration_token": members[0].registration_token,
+                            "push": members[0].push
                         };
                         console.log("hashpassword===>"+ user.hashPassword);
                         callback(null, user, connection);
@@ -145,7 +146,7 @@ module.exports = function (passport) {
 
 
         function selectOrCreateUser (connection, callback) {
-            var sql = "SELECT id, facebook_id, facebook_email, facebook_name, registration_token "+
+            var sql = "SELECT id, facebook_id, facebook_email, facebook_name, registration_token, push "+
                       "FROM bangdb.user "+
                       "WHERE facebook_id = ?";
             connection.query(sql, [profile.id], function (err, members) {
@@ -182,7 +183,8 @@ module.exports = function (passport) {
                                 "facebookId": members[0].facebook_id,
                                 "facebookUsername": members[0].facebook_name,
                                 "facebookEmail": members[0].facebook_email,
-                                "registration_token": member[0].registration_token
+                                "registration_token": members[0].registration_token,
+                                "push": members[0].push
                             };
                             callback(null, user);
                         } else {
@@ -199,7 +201,8 @@ module.exports = function (passport) {
                                         "facebookId": members[0].facebook_id,
                                         "facebookUsername": members[0].facebook_name,
                                         "facebookEmail": members[0].facebook_email,
-                                        "registration_token": member.registration_token
+                                        "registration_token": member.registration_token,
+                                        "push": members[0].push
                                     };
                                     callback(null, user);
                                 }
