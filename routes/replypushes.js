@@ -47,12 +47,8 @@ router.get('/:pid', function (req, res, next) {
             delayWhileIdle: true,
             timeToLive: 3,
             data: {
-                "key": "reply"
-            },
-            notification: {
-                "title": "댓글알림",
-                "body": "게시글에 댓글이 등록되었습니다.",
-                "icon": "ic_launcher"
+                "key1": "reply",
+                "key2": reqPost   // pid
             }
         });
 

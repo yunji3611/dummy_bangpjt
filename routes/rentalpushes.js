@@ -73,12 +73,7 @@ router.get('/:orderId', function (req, res, next) {
                 delayWhileIdle: true,
                 timeToLive: 3,
                 data: {
-                    "key": "rental"
-                },
-                notification: {
-                    "title": "임대기간 알림",
-                    "body": "임대기간이 일주일 남았습니다",
-                    "icon": "ic_launcher"
+                    "key1": "order"    // orderId
                 }
             });
 
