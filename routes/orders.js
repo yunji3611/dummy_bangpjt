@@ -74,7 +74,7 @@ router.post('/', isLoggedIn, function (req, res, next) {
                 next(err);
             } else {
                 console.log("orderId====>"+orderId);
-                request.get({url: 'http://localhost/rentalpushes/'+ orderId}, function (err, httpResponse, body) {
+                request.get({url: 'http://ec2-52-79-116-69.ap-northeast-2.compute.amazonaws.com/rentalpushes/'+ orderId}, function (err, httpResponse, body) {
                     console.log(body);
                     res.json({"result": {"message": "임대되었습니다"}});
                 });
