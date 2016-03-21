@@ -127,7 +127,6 @@ router.post('/login', function (req, res, next) {
                                 "message": "로그인 되었습니다",
                                 "id": req.user.id,
                                 "push": req.user.push
-
                             }
                        });
                        //res.json(user);

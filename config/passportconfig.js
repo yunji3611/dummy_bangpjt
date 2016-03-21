@@ -212,19 +212,6 @@ module.exports = function (passport) {
         }
 
 
-        //function tokenUpdate(user, connection, callback) {
-        //    var sql = "UPDATE bangdb.user "+
-        //        "SET registration_token =? "+
-        //        "WHERE id=? ";
-        //    connection.query(sql, [registration_token, user.id], function (err) {
-        //        if (err) {
-        //            callback(err);
-        //        } else {
-        //            callback(null, user, connection);
-        //        }
-        //    })
-        //}
-
         async.waterfall([getConnection, selectOrCreateUser], function (err, user) {
             if (err) {
                 done(err);
