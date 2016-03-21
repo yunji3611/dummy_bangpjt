@@ -47,7 +47,7 @@ router.get('/:pid', function (req, res, next) {
             delayWhileIdle: true,
             timeToLive: 3,
             data: {
-                "key": "massage"
+                "key": "reply"
             },
             notification: {
                 "title": "댓글알림",

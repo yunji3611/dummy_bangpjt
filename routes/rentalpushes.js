@@ -73,7 +73,7 @@ router.get('/:orderId', function (req, res, next) {
                 delayWhileIdle: true,
                 timeToLive: 3,
                 data: {
-                    "key": "massage"
+                    "key": "rental"
                 },
                 notification: {
                     "title": "임대기간 알림",
