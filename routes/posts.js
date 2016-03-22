@@ -290,7 +290,7 @@ router.get('/:post_id', function (req, res, next) {
     console.log('카테고리' + category);
     console.log('게시물id' + pid);
 
-    if (category === 'community') {
+    if (category === 'community') {   // community
         var replyList = [];
         var tagList = [];
 
@@ -470,7 +470,7 @@ router.get('/:post_id', function (req, res, next) {
         function selectFurniture(i_details, connection, callback) {
             var furnituresql = "SELECT f.f_photo_path, f.brand, f.name, f.no, f.size, f.color_id, f.link, f.price " +
                 "FROM furniture f LEFT JOIN post p ON(f.post_id = p.id) " +
-                "LEFT JOIN color c ON(f.color_id = c.id) " +
+                // "LEFT JOIN color c ON(f.color_id = c.id) " +
                 "WHERE p.id = ? ";
 
             connection.query(furnituresql, [pid], function (err, furnitures) {
