@@ -350,9 +350,11 @@ router.get('/:post_id', function (req, res, next) {
         }
 
         function selectReply2(c_details, connection, callback) {
-            var replysql = "SELECT r.id, r.username as username, r.reply_content, r.reply_time " +
-                "FROM reply r LEFT JOIN post p on(r.post_id = p.id) " +
-                "WHERE p.id = ? ";
+            var replysql =  "SELECT u.id as userid, r.id, r.username as username, r.reply_content, r.reply_time " +
+                            "FROM reply r JOIN (SELECT id, username " +
+                                               "FROM user) u " +
+                                               "ON (u.username = r.username) " +
+                            "WHERE r.post_id = ? ";
 
             connection.query(replysql, [pid], function (err, replies) {
                 if (err) {
@@ -1345,10 +1347,10 @@ router.delete('/:post_id/replies/:reply_id', isLoggedIn, function (req, res, nex
     }
 
     function compareUser(connection, callback) {
-        var sql = "select u.id as userid, u.username, r.post_id as rpostid, r.id as replyId " +
-            "from reply r join (select id, username " +
-            "from user) u " +
-            "on (u.username = r.username) " +
+        var sql = "SELECT u.id as userid, u.username, r.post_id as rpostid, r.id as replyId " +
+                  "FROM reply r JOIN (SELECT id, username " +
+                                     "FROM user) u " +
+                                      "ON (u.username = r.username) " +
             "where r.id=? and post_id=?";
         connection.query(sql, [rid, pid], function (err, results) {
             if (err) {

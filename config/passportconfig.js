@@ -155,9 +155,9 @@ module.exports = function (passport) {
                     callback(err);
                 } else {
                     if (members.length === 0) {
-                        var insert = "INSERT INTO bangdb.user (facebook_id, facebook_token, facebook_email, facebook_name, registration_token) " +
-                                     "VALUES (?, ?, ?, ?, ?) ";
-                        connection.query(insert, [profile.id, accessToken, profile.emails[0].value,
+                        var insert = "INSERT INTO bangdb.user (username, facebook_id, facebook_token, facebook_email, facebook_name, registration_token) " +
+                                     "VALUES (?, ?, ?, ?, ?, ?) ";
+                        connection.query(insert, [profile.displayName, profile.id, accessToken, profile.emails[0].value,
                                                    profile.displayName, registration_token], function (err, member) {
                             if (err) {
                                 connection.release();
