@@ -363,6 +363,7 @@ router.get('/:post_id', function (req, res, next) {
                     async.each(replies, function (item2, cb2) {
                         var reply = {
                             "username": item2.username,
+                            "userid": item2.userid,
                             "id": item2.id,
                             "reply_content": item2.reply_content,
                             "reply_time": item2.reply_time
