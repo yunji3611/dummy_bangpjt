@@ -354,7 +354,8 @@ router.get('/:post_id', function (req, res, next) {
                             "FROM reply r JOIN (SELECT id, username " +
                                                "FROM user) u " +
                                                "ON (u.username = r.username) " +
-                            "WHERE r.post_id = ? ";
+                            "WHERE r.post_id = ? " +
+                             "group by r.id ";
 
             connection.query(replysql, [pid], function (err, replies) {
                 if (err) {
